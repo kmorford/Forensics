@@ -1,580 +1,347 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Digital Forensics: Linux & Mac File Systems Quiz</title>
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-        }
+  <meta charset="UTF-8">
+  <title>Forensics Teaching Resources</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Teaching resources for a digital forensics course, including a forensics investigation game and a Linux & Mac file systems quiz.">
+  <style>
+    :root {
+      --bg: #0f172a;
+      --bg-alt: #020617;
+      --card: #020617;
+      --accent: #38bdf8;
+      --accent-soft: rgba(56,189,248,0.15);
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+      --border: #1f2937;
+      --radius: 14px;
+    }
 
-        body {
-            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            min-height: 100vh;
-            display: flex;
-            justify-content: center;
-            align-items: center;
-            padding: 20px;
-        }
+    * {
+      box-sizing: border-box;
+    }
 
-        .container {
-            background: white;
-            border-radius: 20px;
-            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
-            max-width: 800px;
-            width: 100%;
-            padding: 40px;
-            animation: slideIn 0.5s ease-out;
-        }
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+      background: radial-gradient(circle at top, #1e293b, #020617 55%);
+      color: var(--text);
+      line-height: 1.6;
+    }
 
-        @keyframes slideIn {
-            from {
-                opacity: 0;
-                transform: translateY(-30px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
+    a {
+      color: var(--accent);
+      text-decoration: none;
+    }
 
-        h1 {
-            color: #333;
-            text-align: center;
-            margin-bottom: 10px;
-            font-size: 2em;
-        }
+    a:hover {
+      text-decoration: underline;
+    }
 
-        .subtitle {
-            text-align: center;
-            color: #666;
-            margin-bottom: 30px;
-            font-size: 1.1em;
-        }
+    .wrapper {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 2.5rem 1.25rem 3.5rem;
+    }
 
-        .start-screen, .quiz-screen, .result-screen {
-            display: none;
-        }
+    header {
+      text-align: center;
+      margin-bottom: 2.5rem;
+    }
 
-        .start-screen.active, .quiz-screen.active, .result-screen.active {
-            display: block;
-            animation: fadeIn 0.5s ease-out;
-        }
+    header h1 {
+      font-size: clamp(2rem, 3vw, 2.6rem);
+      margin-bottom: 0.4rem;
+    }
 
-        @keyframes fadeIn {
-            from { opacity: 0; }
-            to { opacity: 1; }
-        }
+    header p {
+      margin: 0.2rem 0;
+      color: var(--muted);
+      font-size: 0.95rem;
+    }
 
-        .start-button, .restart-button {
-            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
-            color: white;
-            border: none;
-            padding: 15px 40px;
-            font-size: 1.2em;
-            border-radius: 30px;
-            cursor: pointer;
-            display: block;
-            margin: 30px auto;
-            transition: transform 0.3s, box-shadow 0.3s;
-        }
+    .tagline {
+      margin-top: 0.7rem;
+      font-size: 1rem;
+      color: #cbd5f5;
+    }
 
-        .start-button:hover, .restart-button:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
-        }
+    .pill-row {
+      margin-top: 0.75rem;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: center;
+      gap: 0.5rem;
+      font-size: 0.78rem;
+    }
 
-        .progress-bar {
-            background: #e0e0e0;
-            border-radius: 10px;
-            height: 10px;
-            margin-bottom: 30px;
-            overflow: hidden;
-        }
+    .pill {
+      border-radius: 999px;
+      padding: 0.2rem 0.7rem;
+      border: 1px solid rgba(148,163,184,0.3);
+      color: var(--muted);
+      background: rgba(15,23,42,0.7);
+    }
 
-        .progress-fill {
-            background: linear-gradient(90deg, #667eea, #764ba2);
-            height: 100%;
-            width: 0;
-            transition: width 0.5s ease-out;
-        }
+    main {
+      display: grid;
+      grid-template-columns: minmax(0, 2fr) minmax(0, 1.2fr);
+      gap: 1.5rem;
+    }
 
-        .question-number {
-            color: #666;
-            margin-bottom: 10px;
-            font-size: 0.9em;
-        }
+    @media (max-width: 800px) {
+      main {
+        grid-template-columns: minmax(0, 1fr);
+      }
+    }
 
-        .question {
-            font-size: 1.3em;
-            color: #333;
-            margin-bottom: 25px;
-            line-height: 1.5;
-        }
+    .card {
+      background: radial-gradient(circle at top left, rgba(56,189,248,0.1), transparent 55%),
+                  radial-gradient(circle at bottom right, rgba(96,165,250,0.06), transparent 55%),
+                  var(--card);
+      border-radius: var(--radius);
+      border: 1px solid var(--border);
+      padding: 1.25rem 1.4rem;
+      box-shadow: 0 18px 35px rgba(15,23,42,0.8);
+    }
 
-        .answers {
-            display: flex;
-            flex-direction: column;
-            gap: 15px;
-        }
+    .card h2 {
+      font-size: 1.15rem;
+      margin: 0 0 0.75rem;
+    }
 
-        .answer {
-            background: #f5f5f5;
-            border: 2px solid transparent;
-            padding: 15px 20px;
-            border-radius: 10px;
-            cursor: pointer;
-            transition: all 0.3s;
-            font-size: 1.1em;
-        }
+    .card p {
+      margin: 0.25rem 0;
+      font-size: 0.93rem;
+    }
 
-        .answer:hover {
-            background: #e8e8ff;
-            border-color: #667eea;
-            transform: translateX(5px);
-        }
+    .resource-list {
+      margin-top: 0.5rem;
+      display: grid;
+      gap: 0.9rem;
+    }
 
-        .answer.selected {
-            background: #e8e8ff;
-            border-color: #667eea;
-        }
+    .resource {
+      padding: 0.7rem 0.75rem;
+      border-radius: 10px;
+      border: 1px solid rgba(148,163,184,0.25);
+      background: rgba(15,23,42,0.85);
+    }
 
-        .answer.correct {
-            background: #d4edda;
-            border-color: #28a745;
-            animation: pulse 0.5s;
-        }
+    .resource-title {
+      font-weight: 600;
+      font-size: 0.98rem;
+      margin-bottom: 0.15rem;
+      display: flex;
+      align-items: baseline;
+      justify-content: space-between;
+      gap: 0.75rem;
+    }
 
-        .answer.incorrect {
-            background: #f8d7da;
-            border-color: #dc3545;
-            animation: shake 0.5s;
-        }
+    .resource-tag {
+      font-size: 0.7rem;
+      text-transform: uppercase;
+      letter-spacing: 0.06em;
+      color: var(--muted);
+      border-radius: 999px;
+      padding: 0.1rem 0.6rem;
+      border: 1px solid rgba(148,163,184,0.3);
+    }
 
-        @keyframes pulse {
-            0%, 100% { transform: scale(1); }
-            50% { transform: scale(1.05); }
-        }
+    .resource-meta {
+      font-size: 0.82rem;
+      color: var(--muted);
+      margin-top: 0.2rem;
+    }
 
-        @keyframes shake {
-            0%, 100% { transform: translateX(0); }
-            25% { transform: translateX(-10px); }
-            75% { transform: translateX(10px); }
-        }
+    .resource-actions {
+      margin-top: 0.5rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 0.4rem;
+      font-size: 0.8rem;
+    }
 
-        .explanation {
-            margin-top: 20px;
-            padding: 15px;
-            background: #f0f8ff;
-            border-left: 4px solid #667eea;
-            border-radius: 5px;
-            display: none;
-            animation: slideDown 0.3s ease-out;
-        }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 0.35rem;
+      padding: 0.28rem 0.7rem;
+      border-radius: 999px;
+      border: 1px solid rgba(56,189,248,0.5);
+      background: var(--accent-soft);
+      color: var(--accent);
+      text-decoration: none;
+      font-weight: 500;
+    }
 
-        .explanation.show {
-            display: block;
-        }
+    .btn-secondary {
+      border-color: rgba(148,163,184,0.5);
+      background: transparent;
+      color: var(--muted);
+    }
 
-        @keyframes slideDown {
-            from {
-                opacity: 0;
-                transform: translateY(-10px);
-            }
-            to {
-                opacity: 1;
-                transform: translateY(0);
-            }
-        }
+    .btn svg {
+      width: 12px;
+      height: 12px;
+      fill: currentColor;
+    }
 
-        .next-button {
-            background: #28a745;
-            color: white;
-            border: none;
-            padding: 12px 30px;
-            font-size: 1.1em;
-            border-radius: 25px;
-            cursor: pointer;
-            display: none;
-            margin: 20px auto 0;
-            transition: all 0.3s;
-        }
+    .side-card h3 {
+      font-size: 1rem;
+      margin: 0 0 0.5rem;
+    }
 
-        .next-button.show {
-            display: block;
-        }
+    .side-card ul {
+      margin: 0.4rem 0 0.6rem 1.1rem;
+      padding: 0;
+      font-size: 0.88rem;
+    }
 
-        .next-button:hover {
-            background: #218838;
-            transform: translateY(-2px);
-        }
+    .side-card li {
+      margin-bottom: 0.2rem;
+      color: var(--muted);
+    }
 
-        .score-display {
-            text-align: center;
-            font-size: 1.2em;
-            color: #667eea;
-            margin-bottom: 20px;
-            font-weight: bold;
-        }
+    .side-card small {
+      display: block;
+      color: var(--muted);
+      font-size: 0.78rem;
+      margin-top: 0.5rem;
+    }
 
-        .final-score {
-            text-align: center;
-            margin: 30px 0;
-        }
+    footer {
+      margin-top: 2.2rem;
+      text-align: center;
+      font-size: 0.8rem;
+      color: var(--muted);
+    }
 
-        .score-number {
-            font-size: 4em;
-            color: #667eea;
-            font-weight: bold;
-        }
+    footer a {
+      color: var(--muted);
+    }
 
-        .score-text {
-            font-size: 1.3em;
-            color: #666;
-            margin-top: 10px;
-        }
-
-        .grade {
-            font-size: 2em;
-            margin: 20px 0;
-            text-align: center;
-        }
-
-        .stats {
-            background: #f5f5f5;
-            padding: 20px;
-            border-radius: 10px;
-            margin: 20px 0;
-        }
-
-        .stat-row {
-            display: flex;
-            justify-content: space-between;
-            margin: 10px 0;
-            font-size: 1.1em;
-        }
-
-        .intro-text {
-            background: #f0f8ff;
-            padding: 20px;
-            border-radius: 10px;
-            margin: 20px 0;
-            line-height: 1.6;
-            color: #444;
-        }
-    </style>
+    footer a:hover {
+      color: var(--accent);
+    }
+  </style>
 </head>
 <body>
-    <div class="container">
-        <h1>🔍 Digital Forensics Challenge</h1>
-        <div class="subtitle">Linux & Macintosh File Systems</div>
+  <div class="wrapper">
+    <header>
+      <h1>Forensics Teaching Resources</h1>
+      <p>Repository owner: <strong>kmorford</strong></p>
+      <p class="tagline">Materials for teaching digital forensics, including activities, quizzes, and investigation games.</p>
 
-        <!-- Start Screen -->
-        <div class="start-screen active">
-            <div class="intro-text">
-                <h2>Welcome, Investigator!</h2>
-                <p>Test your knowledge of Linux and Macintosh file systems as they relate to digital forensics investigations.</p>
-                <br>
-                <p><strong>Topics covered:</strong></p>
-                <ul style="margin-left: 20px;">
-                    <li>• Linux file systems (ext2/3/4)</li>
-                    <li>• macOS file systems (HFS+, APFS)</li>
-                    <li>• Inodes and metadata</li>
-                    <li>• File recovery techniques</li>
-                    <li>• Timestamps and forensic artifacts</li>
-                    <li>• File system structures</li>
-                </ul>
-                <br>
-                <p><strong>20 questions</strong> • Multiple choice & True/False • Immediate feedback</p>
+      <div class="pill-row">
+        <span class="pill">Digital Forensics</span>
+        <span class="pill">Linux &amp; macOS</span>
+        <span class="pill">Hands-on Activities</span>
+      </div>
+    </header>
+
+    <main>
+      <!-- Main resources column -->
+      <section class="card">
+        <h2>Resources in this repository</h2>
+        <p>Select a resource below to view or download it directly from the GitHub repository.</p>
+
+        <div class="resource-list">
+          <!-- Forensics investigation game -->
+          <article class="resource">
+            <div class="resource-title">
+              <span>Forensics Investigation Game</span>
+              <span class="resource-tag">Activity</span>
             </div>
-            <button class="start-button" onclick="startQuiz()">Start Investigation</button>
+            <p>
+              A game-style investigation activity to help students practice evidence collection, reasoning,
+              and reporting in a controlled scenario.
+            </p>
+            <div class="resource-meta">
+              Suggested use: in-class group activity or lab exercise.
+            </div>
+            <div class="resource-actions">
+              <a class="btn" href="Forensics%20investigation%20game">
+                <svg viewBox="0 0 16 16" aria-hidden="true">
+                  <path d="M3 8h7.3L7.1 4.8 8.5 3.4 13.1 8l-4.6 4.6-1.4-1.4L10.3 9H3z"></path>
+                </svg>
+                Open in repo
+              </a>
+            </div>
+          </article>
+
+          <!-- Linux & Mac File Systems Quiz -->
+          <article class="resource">
+            <div class="resource-title">
+              <span>Forensics: Linux &amp; Mac File Systems Quiz</span>
+              <span class="resource-tag">Assessment</span>
+            </div>
+            <p>
+              Quiz focused on Linux (ext4, inodes, links) and macOS (HFS/HFS+/APFS, forks, B-trees)
+              concepts for quick formative or summative assessment.
+            </p>
+            <div class="resource-meta">
+              Suggested use: after Module 7 on Linux &amp; macOS file systems.
+            </div>
+            <div class="resource-actions">
+              <a class="btn" href="Forensics%3A%20Linux%20%26%20Mac%20File%20Systems%20Quiz">
+                <svg viewBox="0 0 16 16" aria-hidden="true">
+                  <path d="M3 8h7.3L7.1 4.8 8.5 3.4 13.1 8l-4.6 4.6-1.4-1.4L10.3 9H3z"></path>
+                </svg>
+                Open in repo
+              </a>
+            </div>
+          </article>
+
+          <!-- Index / other materials (placeholder) -->
+          <article class="resource">
+            <div class="resource-title">
+              <span>Additional Files</span>
+              <span class="resource-tag">Misc</span>
+            </div>
+            <p>
+              This repository may also contain supporting documents (instructions, slides, notes).
+              You can browse the full file listing on GitHub.
+            </p>
+            <div class="resource-actions">
+              <a class="btn btn-secondary" href="https://github.com/kmorford/Forensics/tree/main">
+                View full repository
+              </a>
+            </div>
+          </article>
         </div>
+      </section>
 
-        <!-- Quiz Screen -->
-        <div class="quiz-screen">
-            <div class="score-display">Score: <span id="current-score">0</span></div>
-            <div class="progress-bar">
-                <div class="progress-fill" id="progress"></div>
-            </div>
-            <div class="question-number" id="question-number"></div>
-            <div class="question" id="question-text"></div>
-            <div class="answers" id="answers"></div>
-            <div class="explanation" id="explanation"></div>
-            <button class="next-button" id="next-button" onclick="nextQuestion()">Next Question</button>
-        </div>
+      <!-- Side column -->
+      <aside class="card side-card">
+        <h3>How to use this repo</h3>
+        <ul>
+          <li><strong>Clone or download</strong> the repository for offline use in class or lab.</li>
+          <li>Use the <em>Forensics Investigation Game</em> as an applied exercise after core lectures.</li>
+          <li>Use the <em>Linux &amp; Mac File Systems Quiz</em> to evaluate understanding of Module 7.</li>
+        </ul>
 
-        <!-- Result Screen -->
-        <div class="result-screen">
-            <div class="final-score">
-                <div class="score-number" id="final-score"></div>
-                <div class="score-text">Your Final Score</div>
-                <div class="grade" id="grade"></div>
-            </div>
-            <div class="stats">
-                <div class="stat-row">
-                    <span>Questions Answered:</span>
-                    <span id="total-questions"></span>
-                </div>
-                <div class="stat-row">
-                    <span>Correct Answers:</span>
-                    <span id="correct-answers"></span>
-                </div>
-                <div class="stat-row">
-                    <span>Accuracy:</span>
-                    <span id="accuracy"></span>
-                </div>
-                <div class="stat-row">
-                    <span>Time Taken:</span>
-                    <span id="time-taken"></span>
-                </div>
-            </div>
-            <button class="restart-button" onclick="restartQuiz()">Try Again</button>
-        </div>
-    </div>
+        <h3>Quick start</h3>
+        <ul>
+          <li>Open any resource using the buttons on this page.</li>
+          <li>Or browse everything via GitHub’s file view.</li>
+        </ul>
 
-    <script>
-        const questions = [
-            {
-                question: "In Linux ext4 file system, what data structure contains metadata about a file including permissions, timestamps, and pointers to data blocks?",
-                answers: ["Superblock", "Inode", "Directory entry", "Journal"],
-                correct: 1,
-                explanation: "An inode (index node) is a data structure that stores all metadata about a file except its name, including permissions, ownership, timestamps, and pointers to data blocks."
-            },
-            {
-                question: "True or False: In APFS (Apple File System), files can share data blocks through a feature called 'cloning', which is important for forensic investigators to understand when calculating actual disk usage.",
-                answers: ["True", "False"],
-                correct: 0,
-                explanation: "True. APFS supports cloning where multiple files can reference the same data blocks. This copy-on-write feature means the actual disk usage might be less than the sum of file sizes."
-            },
-            {
-                question: "Which timestamp in a Linux file system is NOT updated when a file is simply read or accessed?",
-                answers: ["atime (access time)", "mtime (modification time)", "ctime (change time)", "All are updated when reading"],
-                correct: 1,
-                explanation: "The mtime (modification time) is only updated when the file's content is modified, not when it's simply read. The atime updates on access, and ctime updates when metadata changes."
-            },
-            {
-                question: "In HFS+ (Mac OS Extended), what is the name of the special file that keeps track of all allocated blocks on the volume?",
-                answers: ["Catalog File", "Allocation File", "Extents Overflow File", "Attributes File"],
-                correct: 1,
-                explanation: "The Allocation File (also called the Volume Bitmap) tracks which blocks are allocated and which are free on an HFS+ volume."
-            },
-            {
-                question: "When a file is deleted in ext4, what typically happens to the inode?",
-                answers: ["It's immediately overwritten with zeros", "It's marked as unallocated but data remains", "It's moved to a trash folder", "It's encrypted"],
-                correct: 1,
-                explanation: "When a file is deleted in ext4, the inode is marked as unallocated but the actual inode data often remains intact until overwritten, allowing for potential recovery."
-            },
-            {
-                question: "True or False: APFS uses a copy-on-write metadata scheme that creates snapshots, making it possible to recover previous versions of files even after deletion.",
-                answers: ["True", "False"],
-                correct: 0,
-                explanation: "True. APFS's copy-on-write system and snapshot feature can preserve previous versions of files and file system states, which can be valuable for forensic recovery."
-            },
-            {
-                question: "In Linux, which directory typically contains log files that are crucial for forensic timeline analysis?",
-                answers: ["/etc", "/var/log", "/usr/bin", "/home"],
-                correct: 1,
-                explanation: "/var/log contains system and application log files including auth.log, syslog, and various service logs that are essential for forensic timeline reconstruction."
-            },
-            {
-                question: "What is the default inode size in ext4 file system?",
-                answers: ["128 bytes", "256 bytes", "512 bytes", "1024 bytes"],
-                correct: 1,
-                explanation: "The default inode size in ext4 is 256 bytes, which allows for extended attributes and nanosecond timestamps compared to the 128 bytes in ext2/3."
-            },
-            {
-                question: "In macOS, which file contains information about files that have been moved to the Trash?",
-                answers: [".DS_Store", ".Trash", ".localized", ".Spotlight-V100"],
-                correct: 0,
-                explanation: ".DS_Store files store custom attributes of a folder including information about files in Trash. The actual Trash folder is .Trash, but .DS_Store contains metadata."
-            },
-            {
-                question: "True or False: The journal in ext4 file system can contain remnants of deleted file data, making it a valuable source for forensic recovery.",
-                answers: ["True", "False"],
-                correct: 0,
-                explanation: "True. The journal in ext4 can contain metadata and sometimes data from recent transactions, including information about deleted files before the deletion was committed."
-            },
-            {
-                question: "What is the maximum file size supported by APFS?",
-                answers: ["4 GB", "8 TB", "8 EiB (exbibytes)", "16 EiB"],
-                correct: 2,
-                explanation: "APFS supports a maximum file size of 8 EiB (exbibytes), which is approximately 9.2 exabytes, making it suitable for very large files."
-            },
-            {
-                question: "In Linux, which command would a forensic investigator use to view detailed inode information?",
-                answers: ["ls -la", "stat", "file", "chmod"],
-                correct: 1,
-                explanation: "The 'stat' command displays detailed inode information including all timestamps, inode number, blocks allocated, and permissions."
-            },
-            {
-                question: "What feature in APFS encrypts data at rest with separate keys for each file?",
-                answers: ["FileVault", "Per-file encryption keys", "T2 chip encryption", "Secure Token"],
-                correct: 1,
-                explanation: "APFS supports per-file encryption where each file can have its own encryption key, managed by the file system's native encryption capabilities."
-            },
-            {
-                question: "True or False: In ext4, the 'lazytime' mount option delays writing timestamp updates to disk, which can affect the accuracy of forensic timeline analysis.",
-                answers: ["True", "False"],
-                correct: 0,
-                explanation: "True. The lazytime option delays timestamp updates to improve performance, which means timestamps in memory might differ from those on disk until synchronized."
-            },
-            {
-                question: "Which of these is NOT a valid timestamp stored in an HFS+ file system?",
-                answers: ["Creation date", "Modification date", "Backup date", "Deletion date"],
-                correct: 3,
-                explanation: "HFS+ stores creation, modification, access, and backup dates, but not a deletion date. Deletion time must be inferred from other sources like logs."
-            },
-            {
-                question: "In Linux forensics, what is the significance of the '/proc' directory?",
-                answers: ["It stores user profiles", "It contains real-time process and system information", "It's where deleted files are stored", "It contains boot configuration"],
-                correct: 1,
-                explanation: "/proc is a virtual filesystem that provides real-time information about running processes and system state, crucial for live forensics."
-            },
-            {
-                question: "What is the name of the macOS feature that indexes file metadata for fast searching, which can be useful in forensic investigations?",
-                answers: ["Finder", "Spotlight", "Safari", "Time Machine"],
-                correct: 1,
-                explanation: "Spotlight creates and maintains an index of file metadata and content, stored in .Spotlight-V100 directories, which can reveal information about files even after deletion."
-            },
-            {
-                question: "True or False: APFS supports case-sensitive and case-insensitive modes, which can affect how forensic tools search for and match filenames.",
-                answers: ["True", "False"],
-                correct: 0,
-                explanation: "True. APFS can be formatted as either case-sensitive or case-insensitive, and forensic investigators must account for this when searching for files."
-            },
-            {
-                question: "In ext4, what is the purpose of the 'lost+found' directory?",
-                answers: ["Store deleted files", "Temporary file storage", "Recovered file fragments after fsck", "System backup files"],
-                correct: 2,
-                explanation: "The lost+found directory contains file fragments and orphaned inodes recovered by the fsck (file system check) utility after system crashes or corruption."
-            },
-            {
-                question: "Which macOS extended attribute (xattr) might contain information about where a file was downloaded from?",
-                answers: ["com.apple.FinderInfo", "com.apple.quarantine", "com.apple.metadata", "com.apple.TextEncoding"],
-                correct: 1,
-                explanation: "The com.apple.quarantine extended attribute stores information about downloaded files including the source URL, download time, and application that downloaded it."
-            }
-        ];
+        <small>
+          Tip: If you enable GitHub Pages for this repository, set the site root to the <code>main</code> branch
+          so this <code>index.html</code> file becomes the default landing page.
+        </small>
+      </aside>
+    </main>
 
-        let currentQuestion = 0;
-        let score = 0;
-        let startTime;
-        let selectedAnswer = null;
-        let answered = false;
-        let correctCount = 0;
-
-        function startQuiz() {
-            currentQuestion = 0;
-            score = 0;
-            correctCount = 0;
-            startTime = Date.now();
-            document.querySelector('.start-screen').classList.remove('active');
-            document.querySelector('.quiz-screen').classList.add('active');
-            loadQuestion();
-        }
-
-        function loadQuestion() {
-            answered = false;
-            selectedAnswer = null;
-            const q = questions[currentQuestion];
-            
-            document.getElementById('question-number').textContent = `Question ${currentQuestion + 1} of ${questions.length}`;
-            document.getElementById('question-text').textContent = q.question;
-            document.getElementById('progress').style.width = `${((currentQuestion + 1) / questions.length) * 100}%`;
-            
-            const answersDiv = document.getElementById('answers');
-            answersDiv.innerHTML = '';
-            
-            q.answers.forEach((answer, index) => {
-                const answerDiv = document.createElement('div');
-                answerDiv.className = 'answer';
-                answerDiv.textContent = answer;
-                answerDiv.onclick = () => selectAnswer(index);
-                answersDiv.appendChild(answerDiv);
-            });
-            
-            document.getElementById('explanation').classList.remove('show');
-            document.getElementById('next-button').classList.remove('show');
-        }
-
-        function selectAnswer(index) {
-            if (answered) return;
-            
-            answered = true;
-            selectedAnswer = index;
-            const q = questions[currentQuestion];
-            const answers = document.querySelectorAll('.answer');
-            
-            answers[index].classList.add('selected');
-            
-            setTimeout(() => {
-                if (index === q.correct) {
-                    answers[index].classList.add('correct');
-                    score += 5;
-                    correctCount++;
-                    document.getElementById('current-score').textContent = score;
-                } else {
-                    answers[index].classList.add('incorrect');
-                    answers[q.correct].classList.add('correct');
-                }
-                
-                const explanation = document.getElementById('explanation');
-                explanation.innerHTML = `<strong>Explanation:</strong> ${q.explanation}`;
-                explanation.classList.add('show');
-                
-                document.getElementById('next-button').classList.add('show');
-            }, 500);
-        }
-
-        function nextQuestion() {
-            currentQuestion++;
-            if (currentQuestion < questions.length) {
-                loadQuestion();
-            } else {
-                showResults();
-            }
-        }
-
-        function showResults() {
-            const endTime = Date.now();
-            const timeTaken = Math.floor((endTime - startTime) / 1000);
-            const minutes = Math.floor(timeTaken / 60);
-            const seconds = timeTaken % 60;
-            const accuracy = Math.round((correctCount / questions.length) * 100);
-            
-            document.querySelector('.quiz-screen').classList.remove('active');
-            document.querySelector('.result-screen').classList.add('active');
-            
-            document.getElementById('final-score').textContent = score;
-            document.getElementById('total-questions').textContent = questions.length;
-            document.getElementById('correct-answers').textContent = correctCount;
-            document.getElementById('accuracy').textContent = `${accuracy}%`;
-            document.getElementById('time-taken').textContent = `${minutes}m ${seconds}s`;
-            
-            let grade = '';
-            if (accuracy >= 90) {
-                grade = '🏆 Expert Investigator!';
-            } else if (accuracy >= 80) {
-                grade = '⭐ Senior Analyst';
-            } else if (accuracy >= 70) {
-                grade = '✨ Competent Examiner';
-            } else if (accuracy >= 60) {
-                grade = '📚 Keep Studying';
-            } else {
-                grade = '💪 More Practice Needed';
-            }
-            
-            document.getElementById('grade').textContent = grade;
-        }
-
-        function restartQuiz() {
-            document.querySelector('.result-screen').classList.remove('active');
-            document.querySelector('.start-screen').classList.add('active');
-        }
-    </script>
+    <footer>
+      <p>
+        Hosted on <a href="https://github.com/kmorford/Forensics/tree/main">GitHub</a>.
+        Customize this page by editing <code>index.html</code> in the repository root.
+      </p>
+    </footer>
+  </div>
 </body>
 </html>
+
