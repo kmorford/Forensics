@@ -1,0 +1,580 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital Forensics: Linux & Mac File Systems Quiz</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+        }
+
+        .container {
+            background: white;
+            border-radius: 20px;
+            box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+            max-width: 800px;
+            width: 100%;
+            padding: 40px;
+            animation: slideIn 0.5s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateY(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        h1 {
+            color: #333;
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 2em;
+        }
+
+        .subtitle {
+            text-align: center;
+            color: #666;
+            margin-bottom: 30px;
+            font-size: 1.1em;
+        }
+
+        .start-screen, .quiz-screen, .result-screen {
+            display: none;
+        }
+
+        .start-screen.active, .quiz-screen.active, .result-screen.active {
+            display: block;
+            animation: fadeIn 0.5s ease-out;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .start-button, .restart-button {
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            color: white;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.2em;
+            border-radius: 30px;
+            cursor: pointer;
+            display: block;
+            margin: 30px auto;
+            transition: transform 0.3s, box-shadow 0.3s;
+        }
+
+        .start-button:hover, .restart-button:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(102, 126, 234, 0.4);
+        }
+
+        .progress-bar {
+            background: #e0e0e0;
+            border-radius: 10px;
+            height: 10px;
+            margin-bottom: 30px;
+            overflow: hidden;
+        }
+
+        .progress-fill {
+            background: linear-gradient(90deg, #667eea, #764ba2);
+            height: 100%;
+            width: 0;
+            transition: width 0.5s ease-out;
+        }
+
+        .question-number {
+            color: #666;
+            margin-bottom: 10px;
+            font-size: 0.9em;
+        }
+
+        .question {
+            font-size: 1.3em;
+            color: #333;
+            margin-bottom: 25px;
+            line-height: 1.5;
+        }
+
+        .answers {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+        }
+
+        .answer {
+            background: #f5f5f5;
+            border: 2px solid transparent;
+            padding: 15px 20px;
+            border-radius: 10px;
+            cursor: pointer;
+            transition: all 0.3s;
+            font-size: 1.1em;
+        }
+
+        .answer:hover {
+            background: #e8e8ff;
+            border-color: #667eea;
+            transform: translateX(5px);
+        }
+
+        .answer.selected {
+            background: #e8e8ff;
+            border-color: #667eea;
+        }
+
+        .answer.correct {
+            background: #d4edda;
+            border-color: #28a745;
+            animation: pulse 0.5s;
+        }
+
+        .answer.incorrect {
+            background: #f8d7da;
+            border-color: #dc3545;
+            animation: shake 0.5s;
+        }
+
+        @keyframes pulse {
+            0%, 100% { transform: scale(1); }
+            50% { transform: scale(1.05); }
+        }
+
+        @keyframes shake {
+            0%, 100% { transform: translateX(0); }
+            25% { transform: translateX(-10px); }
+            75% { transform: translateX(10px); }
+        }
+
+        .explanation {
+            margin-top: 20px;
+            padding: 15px;
+            background: #f0f8ff;
+            border-left: 4px solid #667eea;
+            border-radius: 5px;
+            display: none;
+            animation: slideDown 0.3s ease-out;
+        }
+
+        .explanation.show {
+            display: block;
+        }
+
+        @keyframes slideDown {
+            from {
+                opacity: 0;
+                transform: translateY(-10px);
+            }
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        .next-button {
+            background: #28a745;
+            color: white;
+            border: none;
+            padding: 12px 30px;
+            font-size: 1.1em;
+            border-radius: 25px;
+            cursor: pointer;
+            display: none;
+            margin: 20px auto 0;
+            transition: all 0.3s;
+        }
+
+        .next-button.show {
+            display: block;
+        }
+
+        .next-button:hover {
+            background: #218838;
+            transform: translateY(-2px);
+        }
+
+        .score-display {
+            text-align: center;
+            font-size: 1.2em;
+            color: #667eea;
+            margin-bottom: 20px;
+            font-weight: bold;
+        }
+
+        .final-score {
+            text-align: center;
+            margin: 30px 0;
+        }
+
+        .score-number {
+            font-size: 4em;
+            color: #667eea;
+            font-weight: bold;
+        }
+
+        .score-text {
+            font-size: 1.3em;
+            color: #666;
+            margin-top: 10px;
+        }
+
+        .grade {
+            font-size: 2em;
+            margin: 20px 0;
+            text-align: center;
+        }
+
+        .stats {
+            background: #f5f5f5;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+        }
+
+        .stat-row {
+            display: flex;
+            justify-content: space-between;
+            margin: 10px 0;
+            font-size: 1.1em;
+        }
+
+        .intro-text {
+            background: #f0f8ff;
+            padding: 20px;
+            border-radius: 10px;
+            margin: 20px 0;
+            line-height: 1.6;
+            color: #444;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <h1>🔍 Digital Forensics Challenge</h1>
+        <div class="subtitle">Linux & Macintosh File Systems</div>
+
+        <!-- Start Screen -->
+        <div class="start-screen active">
+            <div class="intro-text">
+                <h2>Welcome, Investigator!</h2>
+                <p>Test your knowledge of Linux and Macintosh file systems as they relate to digital forensics investigations.</p>
+                <br>
+                <p><strong>Topics covered:</strong></p>
+                <ul style="margin-left: 20px;">
+                    <li>• Linux file systems (ext2/3/4)</li>
+                    <li>• macOS file systems (HFS+, APFS)</li>
+                    <li>• Inodes and metadata</li>
+                    <li>• File recovery techniques</li>
+                    <li>• Timestamps and forensic artifacts</li>
+                    <li>• File system structures</li>
+                </ul>
+                <br>
+                <p><strong>20 questions</strong> • Multiple choice & True/False • Immediate feedback</p>
+            </div>
+            <button class="start-button" onclick="startQuiz()">Start Investigation</button>
+        </div>
+
+        <!-- Quiz Screen -->
+        <div class="quiz-screen">
+            <div class="score-display">Score: <span id="current-score">0</span></div>
+            <div class="progress-bar">
+                <div class="progress-fill" id="progress"></div>
+            </div>
+            <div class="question-number" id="question-number"></div>
+            <div class="question" id="question-text"></div>
+            <div class="answers" id="answers"></div>
+            <div class="explanation" id="explanation"></div>
+            <button class="next-button" id="next-button" onclick="nextQuestion()">Next Question</button>
+        </div>
+
+        <!-- Result Screen -->
+        <div class="result-screen">
+            <div class="final-score">
+                <div class="score-number" id="final-score"></div>
+                <div class="score-text">Your Final Score</div>
+                <div class="grade" id="grade"></div>
+            </div>
+            <div class="stats">
+                <div class="stat-row">
+                    <span>Questions Answered:</span>
+                    <span id="total-questions"></span>
+                </div>
+                <div class="stat-row">
+                    <span>Correct Answers:</span>
+                    <span id="correct-answers"></span>
+                </div>
+                <div class="stat-row">
+                    <span>Accuracy:</span>
+                    <span id="accuracy"></span>
+                </div>
+                <div class="stat-row">
+                    <span>Time Taken:</span>
+                    <span id="time-taken"></span>
+                </div>
+            </div>
+            <button class="restart-button" onclick="restartQuiz()">Try Again</button>
+        </div>
+    </div>
+
+    <script>
+        const questions = [
+            {
+                question: "In Linux ext4 file system, what data structure contains metadata about a file including permissions, timestamps, and pointers to data blocks?",
+                answers: ["Superblock", "Inode", "Directory entry", "Journal"],
+                correct: 1,
+                explanation: "An inode (index node) is a data structure that stores all metadata about a file except its name, including permissions, ownership, timestamps, and pointers to data blocks."
+            },
+            {
+                question: "True or False: In APFS (Apple File System), files can share data blocks through a feature called 'cloning', which is important for forensic investigators to understand when calculating actual disk usage.",
+                answers: ["True", "False"],
+                correct: 0,
+                explanation: "True. APFS supports cloning where multiple files can reference the same data blocks. This copy-on-write feature means the actual disk usage might be less than the sum of file sizes."
+            },
+            {
+                question: "Which timestamp in a Linux file system is NOT updated when a file is simply read or accessed?",
+                answers: ["atime (access time)", "mtime (modification time)", "ctime (change time)", "All are updated when reading"],
+                correct: 1,
+                explanation: "The mtime (modification time) is only updated when the file's content is modified, not when it's simply read. The atime updates on access, and ctime updates when metadata changes."
+            },
+            {
+                question: "In HFS+ (Mac OS Extended), what is the name of the special file that keeps track of all allocated blocks on the volume?",
+                answers: ["Catalog File", "Allocation File", "Extents Overflow File", "Attributes File"],
+                correct: 1,
+                explanation: "The Allocation File (also called the Volume Bitmap) tracks which blocks are allocated and which are free on an HFS+ volume."
+            },
+            {
+                question: "When a file is deleted in ext4, what typically happens to the inode?",
+                answers: ["It's immediately overwritten with zeros", "It's marked as unallocated but data remains", "It's moved to a trash folder", "It's encrypted"],
+                correct: 1,
+                explanation: "When a file is deleted in ext4, the inode is marked as unallocated but the actual inode data often remains intact until overwritten, allowing for potential recovery."
+            },
+            {
+                question: "True or False: APFS uses a copy-on-write metadata scheme that creates snapshots, making it possible to recover previous versions of files even after deletion.",
+                answers: ["True", "False"],
+                correct: 0,
+                explanation: "True. APFS's copy-on-write system and snapshot feature can preserve previous versions of files and file system states, which can be valuable for forensic recovery."
+            },
+            {
+                question: "In Linux, which directory typically contains log files that are crucial for forensic timeline analysis?",
+                answers: ["/etc", "/var/log", "/usr/bin", "/home"],
+                correct: 1,
+                explanation: "/var/log contains system and application log files including auth.log, syslog, and various service logs that are essential for forensic timeline reconstruction."
+            },
+            {
+                question: "What is the default inode size in ext4 file system?",
+                answers: ["128 bytes", "256 bytes", "512 bytes", "1024 bytes"],
+                correct: 1,
+                explanation: "The default inode size in ext4 is 256 bytes, which allows for extended attributes and nanosecond timestamps compared to the 128 bytes in ext2/3."
+            },
+            {
+                question: "In macOS, which file contains information about files that have been moved to the Trash?",
+                answers: [".DS_Store", ".Trash", ".localized", ".Spotlight-V100"],
+                correct: 0,
+                explanation: ".DS_Store files store custom attributes of a folder including information about files in Trash. The actual Trash folder is .Trash, but .DS_Store contains metadata."
+            },
+            {
+                question: "True or False: The journal in ext4 file system can contain remnants of deleted file data, making it a valuable source for forensic recovery.",
+                answers: ["True", "False"],
+                correct: 0,
+                explanation: "True. The journal in ext4 can contain metadata and sometimes data from recent transactions, including information about deleted files before the deletion was committed."
+            },
+            {
+                question: "What is the maximum file size supported by APFS?",
+                answers: ["4 GB", "8 TB", "8 EiB (exbibytes)", "16 EiB"],
+                correct: 2,
+                explanation: "APFS supports a maximum file size of 8 EiB (exbibytes), which is approximately 9.2 exabytes, making it suitable for very large files."
+            },
+            {
+                question: "In Linux, which command would a forensic investigator use to view detailed inode information?",
+                answers: ["ls -la", "stat", "file", "chmod"],
+                correct: 1,
+                explanation: "The 'stat' command displays detailed inode information including all timestamps, inode number, blocks allocated, and permissions."
+            },
+            {
+                question: "What feature in APFS encrypts data at rest with separate keys for each file?",
+                answers: ["FileVault", "Per-file encryption keys", "T2 chip encryption", "Secure Token"],
+                correct: 1,
+                explanation: "APFS supports per-file encryption where each file can have its own encryption key, managed by the file system's native encryption capabilities."
+            },
+            {
+                question: "True or False: In ext4, the 'lazytime' mount option delays writing timestamp updates to disk, which can affect the accuracy of forensic timeline analysis.",
+                answers: ["True", "False"],
+                correct: 0,
+                explanation: "True. The lazytime option delays timestamp updates to improve performance, which means timestamps in memory might differ from those on disk until synchronized."
+            },
+            {
+                question: "Which of these is NOT a valid timestamp stored in an HFS+ file system?",
+                answers: ["Creation date", "Modification date", "Backup date", "Deletion date"],
+                correct: 3,
+                explanation: "HFS+ stores creation, modification, access, and backup dates, but not a deletion date. Deletion time must be inferred from other sources like logs."
+            },
+            {
+                question: "In Linux forensics, what is the significance of the '/proc' directory?",
+                answers: ["It stores user profiles", "It contains real-time process and system information", "It's where deleted files are stored", "It contains boot configuration"],
+                correct: 1,
+                explanation: "/proc is a virtual filesystem that provides real-time information about running processes and system state, crucial for live forensics."
+            },
+            {
+                question: "What is the name of the macOS feature that indexes file metadata for fast searching, which can be useful in forensic investigations?",
+                answers: ["Finder", "Spotlight", "Safari", "Time Machine"],
+                correct: 1,
+                explanation: "Spotlight creates and maintains an index of file metadata and content, stored in .Spotlight-V100 directories, which can reveal information about files even after deletion."
+            },
+            {
+                question: "True or False: APFS supports case-sensitive and case-insensitive modes, which can affect how forensic tools search for and match filenames.",
+                answers: ["True", "False"],
+                correct: 0,
+                explanation: "True. APFS can be formatted as either case-sensitive or case-insensitive, and forensic investigators must account for this when searching for files."
+            },
+            {
+                question: "In ext4, what is the purpose of the 'lost+found' directory?",
+                answers: ["Store deleted files", "Temporary file storage", "Recovered file fragments after fsck", "System backup files"],
+                correct: 2,
+                explanation: "The lost+found directory contains file fragments and orphaned inodes recovered by the fsck (file system check) utility after system crashes or corruption."
+            },
+            {
+                question: "Which macOS extended attribute (xattr) might contain information about where a file was downloaded from?",
+                answers: ["com.apple.FinderInfo", "com.apple.quarantine", "com.apple.metadata", "com.apple.TextEncoding"],
+                correct: 1,
+                explanation: "The com.apple.quarantine extended attribute stores information about downloaded files including the source URL, download time, and application that downloaded it."
+            }
+        ];
+
+        let currentQuestion = 0;
+        let score = 0;
+        let startTime;
+        let selectedAnswer = null;
+        let answered = false;
+        let correctCount = 0;
+
+        function startQuiz() {
+            currentQuestion = 0;
+            score = 0;
+            correctCount = 0;
+            startTime = Date.now();
+            document.querySelector('.start-screen').classList.remove('active');
+            document.querySelector('.quiz-screen').classList.add('active');
+            loadQuestion();
+        }
+
+        function loadQuestion() {
+            answered = false;
+            selectedAnswer = null;
+            const q = questions[currentQuestion];
+            
+            document.getElementById('question-number').textContent = `Question ${currentQuestion + 1} of ${questions.length}`;
+            document.getElementById('question-text').textContent = q.question;
+            document.getElementById('progress').style.width = `${((currentQuestion + 1) / questions.length) * 100}%`;
+            
+            const answersDiv = document.getElementById('answers');
+            answersDiv.innerHTML = '';
+            
+            q.answers.forEach((answer, index) => {
+                const answerDiv = document.createElement('div');
+                answerDiv.className = 'answer';
+                answerDiv.textContent = answer;
+                answerDiv.onclick = () => selectAnswer(index);
+                answersDiv.appendChild(answerDiv);
+            });
+            
+            document.getElementById('explanation').classList.remove('show');
+            document.getElementById('next-button').classList.remove('show');
+        }
+
+        function selectAnswer(index) {
+            if (answered) return;
+            
+            answered = true;
+            selectedAnswer = index;
+            const q = questions[currentQuestion];
+            const answers = document.querySelectorAll('.answer');
+            
+            answers[index].classList.add('selected');
+            
+            setTimeout(() => {
+                if (index === q.correct) {
+                    answers[index].classList.add('correct');
+                    score += 5;
+                    correctCount++;
+                    document.getElementById('current-score').textContent = score;
+                } else {
+                    answers[index].classList.add('incorrect');
+                    answers[q.correct].classList.add('correct');
+                }
+                
+                const explanation = document.getElementById('explanation');
+                explanation.innerHTML = `<strong>Explanation:</strong> ${q.explanation}`;
+                explanation.classList.add('show');
+                
+                document.getElementById('next-button').classList.add('show');
+            }, 500);
+        }
+
+        function nextQuestion() {
+            currentQuestion++;
+            if (currentQuestion < questions.length) {
+                loadQuestion();
+            } else {
+                showResults();
+            }
+        }
+
+        function showResults() {
+            const endTime = Date.now();
+            const timeTaken = Math.floor((endTime - startTime) / 1000);
+            const minutes = Math.floor(timeTaken / 60);
+            const seconds = timeTaken % 60;
+            const accuracy = Math.round((correctCount / questions.length) * 100);
+            
+            document.querySelector('.quiz-screen').classList.remove('active');
+            document.querySelector('.result-screen').classList.add('active');
+            
+            document.getElementById('final-score').textContent = score;
+            document.getElementById('total-questions').textContent = questions.length;
+            document.getElementById('correct-answers').textContent = correctCount;
+            document.getElementById('accuracy').textContent = `${accuracy}%`;
+            document.getElementById('time-taken').textContent = `${minutes}m ${seconds}s`;
+            
+            let grade = '';
+            if (accuracy >= 90) {
+                grade = '🏆 Expert Investigator!';
+            } else if (accuracy >= 80) {
+                grade = '⭐ Senior Analyst';
+            } else if (accuracy >= 70) {
+                grade = '✨ Competent Examiner';
+            } else if (accuracy >= 60) {
+                grade = '📚 Keep Studying';
+            } else {
+                grade = '💪 More Practice Needed';
+            }
+            
+            document.getElementById('grade').textContent = grade;
+        }
+
+        function restartQuiz() {
+            document.querySelector('.result-screen').classList.remove('active');
+            document.querySelector('.start-screen').classList.add('active');
+        }
+    </script>
+</body>
+</html>
