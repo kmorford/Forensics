@@ -45,4 +45,52 @@
       display: inline-block;
       margin-top: 0.6rem;
       padding: 0.5rem 1rem;
-      border-r
+      border-radius: 8px;
+      background-color: rgba(56,189,248,0.2);
+      border: 1px solid rgba(56,189,248,0.4);
+      color: #38bdf8;
+      font-weight: 600;
+    }
+    .btn:hover {
+      background-color: rgba(56,189,248,0.3);
+    }
+    footer {
+      text-align: center;
+      color: #9ca3af;
+      margin-top: 3rem;
+      font-size: 0.9rem;
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Forensics Teaching Resources</h1>
+      <p>Digital Forensics learning materials by <strong>K. Raine Morford</strong></p>
+      <p>Interactive activities and assessments for Linux and macOS forensic analysis.</p>
+    </header>
+
+    <section class="card">
+      <h2>🔍 Forensics Investigation Game</h2>
+      <p>A scenario-based investigation activity where students practice evidence collection, reasoning, and reporting in a simulated case.</p>
+      <a class="btn" href="Forensics_investigation_game.html">Open Forensics Investigation Game</a>
+    </section>
+
+    <section class="card">
+      <h2>💾 Linux &amp; Mac File Systems Quiz</h2>
+      <p>An assessment on Linux (ext4, inodes, links) and macOS (HFS/HFS+/APFS, forks, B-trees) file system structures and forensic artifacts.</p>
+      <a class="btn" href="Linux_Mac_File_Systems_Quiz.html">Take the Quiz</a>
+    </section>
+
+    <section class="card">
+      <h2>📁 Repository Directory</h2>
+      <p>Access the complete repository, including lesson plans, lab materials, and additional documentation.</p>
+      <a class="btn" href="https://github.com/kmorford/Forensics/tree/main" target="_blank">View on GitHub</a>
+    </section>
+
+    <footer>
+      <p>© 2025 K. Raine Morford | Hosted on <a href="https://github.com/kmorford/Forensics/">GitHub</a></p>
+    </footer>
+  </div>
+</body>
+</html>
