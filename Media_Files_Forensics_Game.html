@@ -1,0 +1,560 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Media Files & Digital Forensics – Interactive Case Game</title>
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="Interactive scenario game on media files and digital forensics: recovery, carving, steganography, and validation.">
+  <style>
+    :root {
+      --bg: #0f172a;
+      --card: #111827;
+      --accent: #38bdf8;
+      --accent-soft: rgba(56,189,248,0.15);
+      --border: #374151;
+      --text: #e5e7eb;
+      --muted: #9ca3af;
+      --correct: #22c55e;
+      --incorrect: #ef4444;
+    }
+
+    * { box-sizing: border-box; }
+
+    body {
+      margin: 0;
+      font-family: system-ui, -apple-system, "Segoe UI", sans-serif;
+      background-color: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+    }
+
+    a { color: var(--accent); text-decoration: none; }
+
+    .container {
+      max-width: 960px;
+      margin: 0 auto;
+      padding: 2rem 1.25rem 3rem;
+    }
+
+    h1, h2, h3 {
+      margin: 0;
+      color: #f9fafb;
+    }
+
+    h1 {
+      font-size: 1.9rem;
+      margin-bottom: 0.25rem;
+    }
+
+    .tagline {
+      color: #cbd5f5;
+      margin-bottom: 0.75rem;
+    }
+
+    .meta {
+      font-size: 0.9rem;
+      color: var(--muted);
+      margin-bottom: 1.5rem;
+    }
+
+    .card {
+      background-color: var(--card);
+      border-radius: 14px;
+      border: 1px solid var(--border);
+      padding: 1.4rem 1.5rem;
+      box-shadow: 0 16px 30px rgba(15,23,42,0.7);
+      margin-bottom: 1.5rem;
+    }
+
+    .start-card {
+      text-align: center;
+    }
+
+    button {
+      font-family: inherit;
+    }
+
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      justify-content: center;
+      gap: 0.35rem;
+      padding: 0.55rem 1.2rem;
+      border-radius: 999px;
+      border: 1px solid rgba(56,189,248,0.7);
+      background: var(--accent-soft);
+      color: var(--accent);
+      font-weight: 600;
+      cursor: pointer;
+      font-size: 0.95rem;
+    }
+
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: default;
+    }
+
+    .btn-secondary {
+      border-color: rgba(148,163,184,0.7);
+      background: transparent;
+      color: var(--muted);
+    }
+
+    .status-row {
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      gap: 0.75rem;
+      margin-bottom: 1rem;
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+
+    .question-title {
+      font-size: 1.1rem;
+      font-weight: 600;
+      margin-bottom: 0.35rem;
+      color: #bfdbfe;
+    }
+
+    .question-stem {
+      margin-bottom: 0.75rem;
+      font-size: 0.97rem;
+    }
+
+    .options {
+      display: grid;
+      gap: 0.5rem;
+      margin: 0.8rem 0;
+    }
+
+    .option-btn {
+      text-align: left;
+      width: 100%;
+      padding: 0.55rem 0.75rem;
+      border-radius: 10px;
+      border: 1px solid var(--border);
+      background: rgba(15,23,42,0.9);
+      color: var(--text);
+      cursor: pointer;
+      font-size: 0.93rem;
+      transition: background 0.12s ease, border-color 0.12s ease, transform 0.05s ease;
+    }
+
+    .option-btn:hover {
+      background: #020617;
+      transform: translateY(-1px);
+    }
+
+    .option-btn.correct {
+      border-color: rgba(34,197,94,0.9);
+      background: rgba(22,163,74,0.18);
+    }
+
+    .option-btn.incorrect {
+      border-color: rgba(239,68,68,0.9);
+      background: rgba(220,38,38,0.16);
+    }
+
+    .feedback {
+      margin-top: 0.75rem;
+      padding-top: 0.6rem;
+      border-top: 1px dashed #4b5563;
+      font-size: 0.9rem;
+    }
+
+    .feedback strong.correct {
+      color: var(--correct);
+    }
+
+    .feedback strong.incorrect {
+      color: var(--incorrect);
+    }
+
+    .summary-score {
+      font-size: 1.4rem;
+      margin-bottom: 0.5rem;
+    }
+
+    .summary-detail {
+      font-size: 0.95rem;
+      color: var(--muted);
+      margin-bottom: 0.6rem;
+    }
+
+    .summary-list {
+      margin-top: 0.9rem;
+      font-size: 0.9rem;
+      color: var(--muted);
+    }
+
+    .summary-list li {
+      margin-bottom: 0.15rem;
+    }
+
+    .hidden { display: none; }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <header>
+      <h1>Media Files &amp; Digital Forensics – Case Game</h1>
+      <p class="tagline">
+        Interactive scenario for Module 8: recovery, carving, steganography, obfuscation, and evidence validation.
+      </p>
+      <p class="meta">
+        Mode: Single-screen interactive quiz • Time: ~20–30 minutes • Feedback: Immediate with explanations
+      </p>
+    </header>
+
+    <!-- START SCREEN -->
+    <section id="start-screen" class="card start-card">
+      <h2>Scenario: “The Leaked Prototype”</h2>
+      <p>
+        You are part of a digital forensics team investigating a leak of high-resolution prototype photos and a promo
+        video from a small hardware company. Several devices have been seized, including a workstation, SD card,
+        USB drive, and email archives.
+      </p>
+      <p>
+        Work through decisions on media file recovery, carving, steganography, and hash-based validation.
+        Each question has one best answer and an explanation.
+      </p>
+      <button class="btn" id="start-btn">Start Game</button>
+    </section>
+
+    <!-- GAME SCREEN -->
+    <section id="game-screen" class="card hidden">
+      <div class="status-row">
+        <div id="progress"></div>
+        <div id="score"></div>
+      </div>
+
+      <div id="question-block">
+        <div class="question-title" id="question-title"></div>
+        <div class="question-stem" id="question-stem"></div>
+        <div class="options" id="options-container"></div>
+        <div class="feedback" id="feedback"></div>
+      </div>
+
+      <div style="margin-top: 1.2rem; display: flex; justify-content: space-between; align-items: center; gap: 0.75rem;">
+        <button class="btn-secondary btn" id="restart-mid-btn">Restart</button>
+        <button class="btn" id="next-btn" disabled>Next question</button>
+      </div>
+    </section>
+
+    <!-- SUMMARY SCREEN -->
+    <section id="summary-screen" class="card hidden">
+      <h2>Case Summary</h2>
+      <p class="summary-score" id="summary-score"></p>
+      <p class="summary-detail" id="summary-detail"></p>
+
+      <h3>What you should be able to do after this module</h3>
+      <ul class="summary-list">
+        <li>Identify and prioritize relevant media types (RAW, Exif JPEG, vector, audio/video) for examination.</li>
+        <li>Explain the role of compression and carving in recovering partially damaged or deleted media.</li>
+        <li>Recognize common steganography and obfuscation indicators in media files.</li>
+        <li>Describe procedures for locating media fragments and repairing damaged headers.</li>
+        <li>Use hash values to validate and discriminate digital evidence.</li>
+        <li>Outline core steps in planning and conducting a media-focused forensic examination.</li>
+      </ul>
+
+      <div style="margin-top: 1.2rem; display:flex; gap:0.75rem; flex-wrap:wrap;">
+        <button class="btn" id="play-again-btn">Play again</button>
+      </div>
+    </section>
+  </div>
+
+  <script>
+    const questions = [
+      {
+        id: 1,
+        title: "Planning the examination",
+        stem: "Your primary task is to examine seized devices for media related to the leaked prototype. Which examination objective is the most appropriate and defensible?",
+        options: [
+          "Prove that Jordan is guilty of leaking company secrets.",
+          "Determine whether media associated with the prototype was created, stored, modified, or transmitted using the seized devices.",
+          "Recover all deleted files on all media and list them in the report.",
+          "Identify any personal media files on Jordan’s devices."
+        ],
+        correct: 1,
+        explanation:
+          "A good examination objective focuses on the behaviour of the devices (“created, stored, modified, transmitted” media) rather than legal guilt or overly broad recovery. It is directly tied to the alleged leak and is technically measurable."
+      },
+      {
+        id: 2,
+        title: "Media types and formats",
+        stem: "You encounter the following files: IMG_2043.CR3, IMG_2043.JPG, prototype_diagram.ai, promo_cut_final.mp4. Which classification is most accurate?",
+        options: [
+          "CR3 and JPG are vector; AI is raster; MP4 is audio only.",
+          "CR3 and JPG are raster/bitmap images; AI is vector; MP4 is an audio–video container.",
+          "All of them are raster/bitmap images.",
+          "Only MP4 is a media file; the others are treated as generic binary."
+        ],
+        correct: 1,
+        explanation:
+          "CR3 (RAW) and JPG are photographic raster images, AI is vector graphics, and MP4 is a multimedia container that typically holds audio and video streams. This matters for how data is stored, edited, and examined."
+      },
+      {
+        id: 3,
+        title: "RAW vs Exif JPEG",
+        stem: "You have both IMG_2043.CR3 (RAW) and IMG_2043.JPG (Exif JPEG) of the same scene. From a forensic perspective, what is a key advantage of examining the RAW file?",
+        options: [
+          "RAW files are always smaller and easier to transmit than JPEGs.",
+          "RAW files contain minimally processed sensor data that can preserve subtle traces of manipulation or editing.",
+          "RAW files cannot be deleted from cameras and are therefore perfect evidence.",
+          "RAW files always include full user account information and passwords."
+        ],
+        correct: 1,
+        explanation:
+          "RAW files retain minimally processed sensor data and a wide dynamic range; this can help detect manipulations or inconsistencies. JPEGs are compressed with more aggressive processing and may discard informative detail."
+      },
+      {
+        id: 4,
+        title: "Compression and search",
+        stem: "A suspect email attachment named holiday_photos.zip is present. Why can compressed containers like ZIP complicate simple signature or keyword searches at the disk level?",
+        options: [
+          "Compressed files cannot be stored on disks at all.",
+          "Compression makes all bytes zero, so signatures disappear.",
+          "The internal files are stored in compressed form, so their original headers and strings are not directly visible in the outer disk image.",
+          "The operating system always encrypts ZIP files automatically."
+        ],
+        correct: 2,
+        explanation:
+          "Within a ZIP, embedded files are compressed, so their raw headers and strings are transformed. Disk-level scanning on the outer image will not see the original JPEG headers or text clearly; tools must decompress the container first."
+      },
+      {
+        id: 5,
+        title: "File carving",
+        stem: "Which statement best describes file carving in the context of media recovery?",
+        options: [
+          "Manually typing out a file’s contents from memory into a hex editor.",
+          "Reconstructing files by scanning unallocated or slack space for known headers/footers and reassembling contiguous blocks without relying on the file system’s metadata.",
+          "Copying files from one folder to another while preserving timestamps.",
+          "Using a hash function to verify the integrity of a file."
+        ],
+        correct: 1,
+        explanation:
+          "Carving ignores the file system metadata and searches raw space for recognizable signatures (e.g., JPEG or MP4 headers/footers). It then rebuilds the file from contiguous blocks. This is especially useful when metadata is missing or corrupted."
+      },
+      {
+        id: 6,
+        title: "Damaged JPEG header",
+        stem: "A JPEG of interest will not open; its header appears corrupted but you have a known-good JPEG from the same camera and settings. Which approach is most appropriate?",
+        options: [
+          "Overwrite the suspect image with the good one on the original evidence disk and try again.",
+          "Copy a valid JPEG header from the known-good file into a working copy of the suspect file, adjust size fields as needed, and document the reconstruction attempt.",
+          "Rename the file with a .txt extension so it opens in a viewer.",
+          "Delete the damaged file so it does not confuse your report."
+        ],
+        correct: 1,
+        explanation:
+          "The correct approach is to work on a forensic copy, transplant a valid header from a similar file, adjust fields if necessary, and thoroughly document the process. Never modify the original evidence image."
+      },
+      {
+        id: 7,
+        title: "Fragmented media signatures",
+        stem: "In unallocated space you see: FF D8 FF E0 ... FF D9 00 00 00 18 66 74 79 70 6D 70 34 32. What is the best interpretation?",
+        options: [
+          "A single intact PNG file.",
+          "A JPEG ending at FF D9 followed immediately by the start of an MP4 file (ftyp mp42).",
+          "Random noise from RAM, not interpretable.",
+          "A text file encoded in UTF-16."
+        ],
+        correct: 1,
+        explanation:
+          "FF D8 ... FF D9 is the canonical JPEG start/end, and 66 74 79 70 6D 70 34 32 corresponds to 'ftypmp42', the MP4 file-type box. This suggests a carved JPEG followed by the beginning of an MP4 file."
+      },
+      {
+        id: 8,
+        title: "Suspicious BMP size",
+        stem: "Two BMP photos of the same whiteboard exist: one is much larger than the other, though resolution is identical. Why might the larger BMP be suspicious from a steganography perspective?",
+        options: [
+          "Steganography tools often hide data by modifying low-order bits or embedding payloads, increasing file size compared to a clean reference.",
+          "BMP files can never be larger than 1 MB, so any larger file is malicious.",
+          "Large BMP files cannot be viewed without special forensic software.",
+          "File size is not relevant; only the file name indicates steganography."
+        ],
+        correct: 0,
+        explanation:
+          "Hidden payloads in a carrier image (e.g., via LSB steganography) can produce notably larger files or different statistical properties compared with an otherwise identical clean image."
+      },
+      {
+        id: 9,
+        title: "Bit-shifting as obfuscation",
+        stem: "A binary file shows a suspicious pattern. After shifting each byte’s bits right by one position, parts resemble a WAV header. What is the purpose of this bit-shifting in an obfuscation context?",
+        options: [
+          "To compress the file more efficiently.",
+          "To avoid simple signature-based detection by slightly altering every byte in a reversible way.",
+          "To permanently destroy the original data so it cannot be recovered.",
+          "To convert audio into text for easier reading."
+        ],
+        correct: 1,
+        explanation:
+          "Bit-shifting is a simple reversible transformation: it changes every byte so signatures and magic numbers no longer match standard patterns, but an attacker (or analyst) can reverse the shift to reveal the original structure."
+      },
+      {
+        id: 10,
+        title: "Encrypted or just compressed?",
+        stem: "Which combination of characteristics most strongly suggests that a file is encrypted rather than just compressed?",
+        options: [
+          "Human-readable text strings and obvious JPEG headers.",
+          "Very low entropy and long runs of 00 bytes.",
+          "High apparent entropy, no recognizable headers or structure, and similar randomness throughout the file.",
+          "Presence of Exif metadata and camera information."
+        ],
+        correct: 2,
+        explanation:
+          "Strong encryption typically produces high-entropy data with no obvious headers, structure, or long repetitive patterns. Compressed files often retain recognizable container signatures or headers (e.g., ZIP, JPEG, MP4)."
+      },
+      {
+        id: 11,
+        title: "Using hash values for validation",
+        stem: "You are given reference copies of the leaked photo and video from a website. How should you use hashing during your examination?",
+        options: [
+          "Compute hashes only after editing the files to make them smaller.",
+          "Compute cryptographic hashes of both the downloaded leaked files and any candidate files on the seized media, and compare for exact matches; also store hashes in your report to support integrity claims.",
+          "Compute hashes but never record them to avoid confusion.",
+          "Use hashing only for password cracking, not for evidence validation."
+        ],
+        correct: 1,
+        explanation:
+          "Hashes should be computed on the downloaded leaked files and on candidate files from the devices. Exact matches indicate identical content; documenting those hash values and algorithms supports integrity and reproducibility."
+      },
+      {
+        id: 12,
+        title: "Planning a media-focused examination",
+        stem: "Which sequence best reflects a disciplined approach to a media-focused digital forensics examination?",
+        options: [
+          "Start opening random media files, then decide objectives, then hash evidence.",
+          "Acquire images, verify with hashes, define objectives and scope, prioritize relevant media types, then conduct targeted recovery and analysis.",
+          "Define objectives after the report is written.",
+          "Immediately run file carving on all disks without any planning."
+        ],
+        correct: 1,
+        explanation:
+          "Sound practice: acquire images using forensically sound methods, verify them with hashes, define clear objectives, prioritize relevant artefacts/media, and then perform targeted analysis and recovery in line with the plan."
+      }
+    ];
+
+    let currentIndex = 0;
+    let score = 0;
+    let answered = false;
+
+    const startScreen = document.getElementById("start-screen");
+    const gameScreen = document.getElementById("game-screen");
+    const summaryScreen = document.getElementById("summary-screen");
+
+    const progressEl = document.getElementById("progress");
+    const scoreEl = document.getElementById("score");
+    const qTitleEl = document.getElementById("question-title");
+    const qStemEl = document.getElementById("question-stem");
+    const optionsContainer = document.getElementById("options-container");
+    const feedbackEl = document.getElementById("feedback");
+    const nextBtn = document.getElementById("next-btn");
+    const restartMidBtn = document.getElementById("restart-mid-btn");
+    const startBtn = document.getElementById("start-btn");
+    const playAgainBtn = document.getElementById("play-again-btn");
+    const summaryScoreEl = document.getElementById("summary-score");
+    const summaryDetailEl = document.getElementById("summary-detail");
+
+    function updateStatus() {
+      progressEl.textContent = `Question ${currentIndex + 1} of ${questions.length}`;
+      scoreEl.textContent = `Score: ${score} / ${questions.length}`;
+    }
+
+    function renderQuestion() {
+      const q = questions[currentIndex];
+      answered = false;
+      qTitleEl.textContent = q.title;
+      qStemEl.textContent = q.stem;
+      optionsContainer.innerHTML = "";
+      feedbackEl.innerHTML = "";
+      nextBtn.disabled = true;
+      nextBtn.textContent = currentIndex === questions.length - 1 ? "View summary" : "Next question";
+
+      q.options.forEach((opt, idx) => {
+        const btn = document.createElement("button");
+        btn.className = "option-btn";
+        btn.textContent = opt;
+        btn.dataset.index = idx.toString();
+        btn.addEventListener("click", () => handleOptionClick(idx));
+        optionsContainer.appendChild(btn);
+      });
+
+      updateStatus();
+    }
+
+    function handleOptionClick(selectedIndex) {
+      if (answered) return;
+      answered = true;
+      const q = questions[currentIndex];
+      const correctIndex = q.correct;
+
+      const optionButtons = optionsContainer.querySelectorAll("button");
+      optionButtons.forEach((btn, idx) => {
+        if (idx === correctIndex) {
+          btn.classList.add("correct");
+        }
+        if (idx === selectedIndex && idx !== correctIndex) {
+          btn.classList.add("incorrect");
+        }
+        btn.disabled = true;
+      });
+
+      if (selectedIndex === correctIndex) {
+        score++;
+        feedbackEl.innerHTML =
+          `<strong class="correct">Correct.</strong> ${q.explanation}`;
+      } else {
+        feedbackEl.innerHTML =
+          `<strong class="incorrect">Not the best choice.</strong> ${q.explanation}`;
+      }
+
+      updateStatus();
+      nextBtn.disabled = false;
+    }
+
+    function startGame() {
+      currentIndex = 0;
+      score = 0;
+      startScreen.classList.add("hidden");
+      summaryScreen.classList.add("hidden");
+      gameScreen.classList.remove("hidden");
+      renderQuestion();
+    }
+
+    function showSummary() {
+      gameScreen.classList.add("hidden");
+      summaryScreen.classList.remove("hidden");
+      summaryScoreEl.textContent = `You answered ${score} out of ${questions.length} correctly.`;
+      let comment;
+      const ratio = score / questions.length;
+      if (ratio === 1) {
+        comment = "Excellent. You’ve demonstrated strong command of media-focused forensics concepts.";
+      } else if (ratio >= 0.75) {
+        comment = "Good performance. Review any missed questions to tighten your examination strategy.";
+      } else if (ratio >= 0.5) {
+        comment = "Partial understanding. Revisit Module 8 topics on carving, steganography, and validation.";
+      } else {
+        comment = "You should systematically revisit Module 8. Focus on procedures, terminology, and evidence handling.";
+      }
+      summaryDetailEl.textContent = comment;
+    }
+
+    // Event listeners
+    startBtn.addEventListener("click", startGame);
+
+    nextBtn.addEventListener("click", () => {
+      if (currentIndex === questions.length - 1) {
+        showSummary();
+      } else {
+        currentIndex++;
+        renderQuestion();
+      }
+    });
+
+    restartMidBtn.addEventListener("click", startGame);
+    playAgainBtn.addEventListener("click", startGame);
+  </script>
+</body>
+</html>
